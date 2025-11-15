@@ -530,6 +530,9 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Basis color classes (minimal, preserve overall theme) */
+        .basis-brown { color: #7C4A16; }  /* brown for Research & Book */
+        .basis-blue  { color: #1E40AF; }  /* blue for GPT/Gen */
 
         /* Responsive adjustments for larger screens (Desktop View) */
         @media (min-width: 600px) {
@@ -1036,6 +1039,7 @@
             var lowerH = h.trim().toLowerCase();
             return lowerH === 'basis'; 
         });
+
 
 
         if (CATEGORY_KEY && FOOD_KEY) {
@@ -1613,6 +1617,9 @@
                     displayContent = formatReferences(content);
                 }
 
+                // Colorize basis labels inside the display content (Research/Book/GPT markers)
+                displayContent = colorizeBasisLabels(displayContent);
+
                 var displayFieldName;
                 if (customDisplayName) {
                     // Use the custom display name if provided
@@ -1852,7 +1859,8 @@
             if (!isValidContent(content)) {
                 element.innerHTML = '<span class="no-data">N/A or not available for the selected basis.</span>';
             } else {
-                element.innerHTML = content;
+                // Colorize basis labels before inserting (Research/Book -> brown, GPT/Gen -> blue)
+                element.innerHTML = colorizeBasisLabels(content);
             }
         }
     }
@@ -1870,6 +1878,36 @@
         });
 
         return processedText;
+    }
+
+    // Colorize basis labels inside HTML/text.
+    // Research & Book -> brown (.basis-brown); GPT/Gen -> blue (.basis-blue)
+    function colorizeBasisLabels(html) {
+        if (!html) return html;
+
+        // If content contains HTML tags already (e.g., <a>), we still do text replacements safely.
+        // Replace strong-labeled prefixes like <strong>[R]</strong> etc. first (from formatData combined output)
+        html = html.replace(/<strong>\s*\[R\]\s*<\/strong>/gi, '<span class="basis-brown"><strong>[R]</strong></span>');
+        html = html.replace(/<strong>\s*\[B\]\s*<\/strong>/gi, '<span class="basis-brown"><strong>[B]</strong></span>');
+        html = html.replace(/<strong>\s*\[G\]\s*<\/strong>/gi, '<span class="basis-blue"><strong>[G]</strong></span>');
+
+        // Replace plain textual markers (case-insensitive)
+html = html.replace(/\b(Research\s*basis|Research basis|Research)\b/gi, function(m){
+    return '<span class="basis-brown"><strong>' + m + '</strong></span>';
+});
+html = html.replace(/\b(Book\s*basis|Book basis|Book)\b/gi, function(m){
+    return '<span class="basis-brown"><strong>' + m + '</strong></span>';
+});
+html = html.replace(/\b(GPT|Gen|gpt|gen)\b/gi, function(m){
+    return '<span class="basis-blue"><strong>' + m + '</strong></span>';
+});
+
+html = html.replace(/\[R\]/g, '<span class="basis-brown"><strong>[R]</strong></span>');
+html = html.replace(/\[B\]/g, '<span class="basis-brown"><strong>[B]</strong></span>');
+html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></span>');
+
+
+        return html;
     }
     
     // --- AI Modal Functions ---
