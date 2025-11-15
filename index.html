@@ -532,7 +532,7 @@
 
         /* Basis color classes (minimal, preserve overall theme) */
         .basis-brown { color: #7C4A16; }  /* brown for Research & Book */
-        .basis-blue  { color: #1E40AF; }  /* blue for GPT/Gen */
+        .basis-blue  { color: #1E40AF; }  /* blue for Gen/Gen */
 
         /* Responsive adjustments for larger screens (Desktop View) */
         @media (min-width: 600px) {
@@ -654,7 +654,7 @@
             <option value="All">All</option>
             <option value="Research">R (Research)</option>
             <option value="Book">B (Book)</option>
-            <option value="GPT">G (GPT)</option>
+            <option value="Gen">G (Gen)</option>
         </select>
     </div>
 </div>
@@ -819,7 +819,7 @@
     var BASIS_MARKERS = [
         { basis: 'Research', patterns: ['research basis', 'research:'] },
         { basis: 'Book', patterns: ['book basis', 'book:'] },
-        { basis: 'GPT', patterns: ['gpt basis', 'gpt:'] }
+        { basis: 'Gen', patterns: ['gen basis', 'gen:'] }
     ];
 
     // Helper function to define fields (allows custom display names)
@@ -1103,7 +1103,7 @@ var sectionDefinitions = {
             if (basis && basis !== 'All') {
                 if (basis.toUpperCase() === 'R' || basis.toLowerCase() === 'research') basis = 'Research';
                 else if (basis.toUpperCase() === 'B' || basis.toLowerCase() === 'book') basis = 'Book';
-                else if (basis.toUpperCase() === 'G' || basis.toLowerCase() === 'gpt') basis = 'GPT';
+                else if (basis.toUpperCase() === 'G' || basis.toLowerCase() === 'gen') basis = 'Gen';
             }
 
             if (!category || !food || !basis) return;
@@ -1623,7 +1623,7 @@ var sectionDefinitions = {
                     displayContent = formatReferences(content);
                 }
 
-                // Colorize basis labels inside the display content (Research/Book/GPT markers)
+                // Colorize basis labels inside the display content (Research/Book -> brown, Gen -> blue)
                 displayContent = colorizeBasisLabels(displayContent);
 
                 var displayFieldName;
@@ -1717,7 +1717,7 @@ var sectionDefinitions = {
             return null; 
         }
 
-        // 2. Find the end index (the start of the next basis: Book, GPT, or Research)
+        // 2. Find the end index (the start of the next basis: Book, Gen, or Research)
         var potentialEndIndices = [];
         
         // Iterate through all markers OTHER than the selected one to find the next section start.
@@ -1838,7 +1838,7 @@ var sectionDefinitions = {
 
         // If not flattened (or if multiple keys exist), combine all available bases.
         var content = [];
-        validKeys.sort(); // Sort for consistency (e.g., All, Book, GPT, Research)
+        validKeys.sort(); // Sort for consistency (e.g., All, Book, Gen, Research)
 
         validKeys.forEach(function(key) {
              // Show labels if more than one basis is present
@@ -1865,7 +1865,7 @@ var sectionDefinitions = {
             if (!isValidContent(content)) {
                 element.innerHTML = '<span class="no-data">N/A or not available for the selected basis.</span>';
             } else {
-                // Colorize basis labels before inserting (Research/Book -> brown, GPT/Gen -> blue)
+                // Colorize basis labels before inserting (Research/Book -> brown, Gen -> blue)
                 element.innerHTML = colorizeBasisLabels(content);
             }
         }
@@ -1887,7 +1887,7 @@ var sectionDefinitions = {
     }
 
     // Colorize basis labels inside HTML/text.
-    // Research & Book -> brown (.basis-brown); GPT/Gen -> blue (.basis-blue)
+    // Research & Book -> brown (.basis-brown); Gen -> blue (.basis-blue)
     function colorizeBasisLabels(html) {
         if (!html) return html;
 
@@ -1904,7 +1904,7 @@ html = html.replace(/\b(Research\s*basis|Research basis|Research)\b/gi, function
 html = html.replace(/\b(Book\s*basis|Book basis|Book)\b/gi, function(m){
     return '<span class="basis-brown"><strong>' + m + '</strong></span>';
 });
-html = html.replace(/\b(GPT|Gen|gpt|gen)\b/gi, function(m){
+html = html.replace(/\b(Gen|gen)\b/gi, function(m){
     return '<span class="basis-blue"><strong>' + m + '</strong></span>';
 });
 
