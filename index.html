@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Matrix</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        /* Modern Color Palette and Variables (AI-Enhanced Design) */
+        :root {
+            /* UPDATED: A deeper, more modern Indigo/Blue */
+            --primary-color: #4F46E5; /* Indigo 600 */
+            --primary-light: #6366F1; /* Indigo 500 (for hovers) */
+            
+            --bg-color: #F9FAFB; /* Softer background (Gray 50) */
+            --text-color: #111827; /* Darker text (Gray 900) */
+            --text-light: #6B7280;
+            --card-bg: white;
+            --input-bg: #F3F4F6; /* Slightly darker input bg (Gray 100) */
+            --border-color: #E5E7EB;
+            
+            /* UPDATED: Softer, layered shadows for depth */
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+            
+            /* Define colors for sections/icons - using a harmonious palette */
+            --color-overview: #4B5563;
+            --color-nutrition: #10B981; /* Emerald */
+            --color-bioactives: #06B6D4; /* Cyan */
+            --color-usage: #F59E0B;     /* Amber */
+            --color-metabolic: #8B5CF6;  /* Violet */
+            --color-tradition: #A16207;  /* Brown/Yellow (Fermentation) */
+            --color-herbal: #14B8A6;    /* Teal */
+            --color-notes: #64748B;
+            --color-references: #94A3B8;
+
+            /* NEW: Basis specific colors as requested */
+            --color-basis-research: #006400; /* Dark Green */
+            --color-basis-book: #A52A2A;    /* Brown */
+            --color-basis-gen: #00008B;     /* Dark Blue */
+            
+            --current-active-color: var(--color-overview);
+            --current-page-bg: color-mix(in srgb, var(--current-active-color) 8%, white);
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* UPDATED: Class for the custom SVG icon */
+        .header-app-icon {
+            width: 32px; /* Slightly larger for better definition */
+            height: 32px;
+            display: block; /* Ensures proper alignment */
+        }
+
+        .header-icon {
+             font-size: 28px;
+        }
+
+        /* Stylish Title with Gradient */
+        .header-title {
+            font-size: 1.3rem;
+            font-weight: 800; /* Extra bold */
+            letter-spacing: 0.5px;
+            color: white; /* Fallback color */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* Modern browser enhancement for gradient text */
+        @supports (-webkit-background-clip: text) or (background-clip: text) {
+            .header-title {
+                /* Gradient from white to a very light indigo tint */
+                background: linear-gradient(to right, #ffffff 0%, #E0E7FF 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                display: inline-block;
+            }
+        }
+
+        /* Camera Button */
+        .camera-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            color: white;
+            transition: background-color 0.2s;
+            border-radius: 50%;
+        }
+        
+        .camera-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .camera-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Selection Panel (Hidden on Mobile) */
+        .selection-panel {
+            display: none; /* Hidden by default (mobile-first) */
+            gap: 8px;
+            padding: 10px;
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow);
+            /* Positioned below the sticky header on desktop */
+            position: sticky;
+            top: 62px; /* Adjust based on header height */
+            z-index: 10;
+        }
+
+        /* Dropdowns (Used in Panel and Modal) */
+        .select-wrapper {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding-left: 8px;
+            background-color: var(--input-bg);  
+            transition: border-color 0.3s;
+            min-width: 0;  
+        }
+
+        .select-wrapper:focus-within {
+            border-color: var(--primary-color);
+        }
+
+        .select-wrapper .material-icons {
+            color: var(--text-light);
+            font-size: 22px;
+        }
+
+        select {
+            padding: 10px 4px;
+            border: none;
+            background: transparent;
+            flex-grow: 1;
+            min-width: 0;  
+            font-size: 14px;
+            appearance: none;
+            font-family: inherit;
+            color: var(--text-color);
+            outline: none;
+        }
+
+        /* --- Mobile Floating Action Button (FAB) --- */
+        #mobile-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px; /* Pill shape */
+            padding: 15px 25px;
+             /* UPDATED: Using a standard, more subtle shadow */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            z-index: 100;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #mobile-fab:hover {
+            transform: translateY(-3px);
+            /* UPDATED: Subtle shadow on hover */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            background-color: var(--primary-light);
+        }
+
+        /* --- Selection Modal (Mobile) --- */
+        #selection-modal {
+            display: none; /* Handled by JS */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .selection-modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+
+        .selection-modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+
+        /* Main Container */
+        .container {
+            padding: 20px 15px;
+            max-width: 800px;
+            margin: auto;
+            /* Added padding bottom for FAB clearance */
+            padding-bottom: 100px;
+        }
+
+        #food-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            /* Adjusted margin to account for new icon row styling */
+            margin-top: 25px;  
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        /* Icon Button Row (UPDATED: Modernized) */
+        .icon-row {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            gap: 12px; /* Slightly larger gap */
+            justify-content: flex-start;
+            padding: 10px 0; /* Padding removed from the container */
+            background: transparent; /* Removed background card styling */
+            box-shadow: none; /* Removed shadow */
+            border-radius: 0;
+        }
+
+        /* Hide scrollbar */
+        .icon-row::-webkit-scrollbar { display: none; }
+        .icon-row { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Icon Buttons (UPDATED: Modernized) */
+        .icon-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Increased size slightly for better tap target */
+            width: 55px;  
+            height: 55px;
+            min-width: 55px;
+            min-height: 55px;
+            flex-shrink: 0;
+            border-radius: 16px; /* More rounded */
+            border: none; /* Removed border */
+            background-color: var(--card-bg); /* White background */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-light);
+            box-shadow: var(--shadow); /* Individual shadow */
+        }
+
+        .icon-button .material-icons {
+            font-size: 28px;
+        }
+
+        .icon-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .icon-button.active {
+            background-color: var(--current-active-color);
+            color: white;
+            /* Dynamic shadow color */
+            box-shadow: 0 6px 15px color-mix(in srgb, var(--current-active-color) 30%, transparent);
+        }
+
+
+        /* Tabs Layout (Card) */
+        .tabs-container {
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            background-color: var(--current-page-bg);
+            transition: background-color 0.5s;
+            margin-bottom: 25px;
+        }
+
+        .tabs-header {
+            display: flex;
+            /* Use a slightly darker grey for the tab header */
+            background-color: #EAECEF;  
+            border-radius: 12px 12px 0 0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background-color: transparent;  
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
+            font-family: inherit;
+        }
+        
+        #tab-btn-overview.active { border-radius: 12px 0 0 0; }
+        #tab-btn-dynamic.active { border-radius: 0 12px 0 0; }
+
+        .tab-button.active {
+            background-color: var(--current-active-color);
+            color: white;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 25px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Info Sections */
+        .info-section {
+            margin-bottom: 25px;
+             padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-section:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.15rem;
+            color: var(--current-active-color);
+            transition: color 0.5s;
+        }
+
+        .info-content {
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        .no-data {
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        a {
+            /* Ensure links stand out even within colored text */
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            /* Adding a subtle background can help visibility on colored spans */
+            background-color: rgba(79, 70, 229, 0.1); 
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            background-color: rgba(79, 70, 229, 0.2); 
+        }
+
+        #loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+
+        /* Image Container */
+        #image-container {
+            text-align: center;
+            margin-bottom: 25px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        #food-image {
+            width: 100%;
+            max-height: 250px;  
+            object-fit: cover;
+            display: block;
+        }
+        
+        #image-placeholder-text {
+            padding: 50px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        /* --- AI Feature Styles --- */
+
+        .ai-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .ai-button:hover {
+            background-color: var(--primary-light);
+            box-shadow: 0 4px 10px color-mix(in srgb, var(--primary-color) 40%, transparent);
+        }
+
+        .ai-button:disabled {
+            background-color: #B0B0B0;
+            cursor: not-allowed;
+        }
+
+        /* NEW: AI Summary Card (Moved to bottom) */
+        .summary-card {
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            background-color: var(--card-bg); /* Use white bg */
+            padding: 25px;
+            margin-top: 25px; /* Add space above it */
+        }
+
+        .summary-card .info-title {
+            color: var(--primary-color); /* Make title stand out */
+        }
+
+        /* Loading Modal (AI Processing) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            max-width: 350px; /* Increased slightly for better feedback */
+            width: 80%;
+        }
+
+        .modal-content p {
+            font-size: 1rem;
+            color: var(--text-color);
+            margin: 0;
+            white-space: pre-wrap; /* Ensure line breaks in modal messages are respected */
+        }
+
+        /* Simple CSS Spinner */
+        .spinner {
+            border: 4px solid var(--input-bg);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        /* Responsive adjustments for larger screens (Desktop View) */
+        @media (min-width: 600px) {
+            /* Show the selection panel on desktop */
+            .selection-panel {
+                display: flex;
+            }
+
+            /* Hide the mobile FAB and Modal on desktop */
+            #mobile-fab {
+                display: none;
+            }
+            #selection-modal {
+                display: none !important;
+            }
+
+            /* Revert icon-row to centered wrapping on larger screens */
+            .icon-row {
+                flex-wrap: wrap;
+                justify-content: center;
+                overflow-x: visible;
+            }
+
+            .icon-button {
+                width: 65px;
+                height: 65px;
+                min-width: 65px;
+                min-height: 65px;
+                border-radius: 18px;
+            }
+            .icon-button .material-icons {
+                font-size: 32px;
+            }
+            select {
+                font-size: 15px;
+                padding: 12px 8px;
+            }
+             header {
+                 padding: 1rem;
+            }
+            #food-image {
+                max-height: 350px;
+            }
+            .select-wrapper .material-icons {
+                 font-size: 24px;
+            }
+            .container {
+                /* Remove extra bottom padding on desktop */
+                padding-bottom: 20px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        ```svg
+        <svg class="header-app-icon" viewBox="0 0 100 100" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)">
+            <style>
+                /* Styles defined within SVG for portability */
+                .icon-fill { fill: white; }
+                /* Light indigo/lavender accent matching the theme */
+                .icon-accent { fill: #A5B4FC; } 
+            </style>
+        
+                        <path d="M20 55 C20 75 35 90 50 90 C65 90 80 75 80 55 L80 50 L20 50 Z" class="icon-fill"/>
+        
+                        <path d="M55 45 L 65 30 C 70 25 70 15 60 15 C 50 15 50 25 55 30 Z" class="icon-fill"/>
+            
+                        <rect x="15" y="88" width="70" height="4" rx="2" class="icon-accent" opacity="0.5"/>
+        
+        </svg>
+````
+
+        \<span class="header-title"\>Food Matrix\</span\>
+    \</div\>
+    
+    \<button class="camera-button" title="Identify Food" onclick="triggerCamera()"\>
+        \<i class="material-icons header-icon"\>photo\_camera\</i\>
+    \</button\>
+
+\</header\>
+
+\<input type="file" id="camera-input" accept="image/\*" capture="environment" style="display: none;"\>
+
+\<div id="ai-modal" class="modal-overlay" style="display: none;"\>
+    \<div class="modal-content"\>
+        \<div class="spinner" id="modal-spinner"\>\</div\>
+        \<p id="modal-message"\>Identifying food...\</p\>
+        \<button id="modal-close-btn" class="ai-button" style="display: none; margin-top: 15px;"\>Close\</button\>
+    \</div\>
+\</div\>
+
+\<div id="loading"\>Loading Food matrix data...\</div\>
+
+\<div id="dropdowns-container" style="display: none;"\>
+     \<div class="select-wrapper"\>
+         \<i class="material-icons" title="Category"\>category\</i\>
+         \<select id="category-select" aria-label="Select Category"\>
+             \<option value=""\>Select Category...\</option\>
+         \</select\>
+     \</div\>
+    \<div class="select-wrapper"\>
+        \<i class="material-icons" title="Food Item"\>restaurant\</i\>
+        \<select id="food-select" aria-label="Select Food" disabled\>
+            \<option value=""\>Select Food...\</option\>
+        \</select\>
+    \</div\>
+    \<div class="select-wrapper" id="basis-wrapper"\>
+        \<i class="material-icons" title="Research Basis"\>science\</i\>
+        \<select id="basis-select" aria-label="Select Basis"\>
+            \<option value="All"\>All\</option\>
+            \<option value="Research"\>R (Research)\</option\>
+            \<option value="Book"\>B (Book)\</option\>
+            \<option value="Gen"\>G (Gen)\</option\>
+        \</select\>
+    \</div\>
+\</div\>
+
+\<div class="selection-panel" id="selection-panel"\>
+    \</div\>
+
+\<button id="mobile-fab" onclick="openSelectionModal()"\>
+    \<i class="material-icons"\>filter\_list\</i\>
+    Select Food
+\</button\>
+
+\<div id="selection-modal"\>
+    \<div class="selection-modal-content"\>
+        \<button class="modal-close material-icons" onclick="closeSelectionModal()"\>close\</button\>
+        \<div class="selection-modal-title"\>Filter Options\</div\>
+        \<div id="modal-dropdowns-target"\>
+                    \</div\>
+    \</div\>
+\</div\>
+
+\<div class="container" id="main-content" style="display: none;"\>
+    
+        \<div class="icon-row" id="icon-row"\>
+            \</div\>
+
+        \<h2 id="food-title"\>\</h2\>
+
+        \<div class="tabs-container" id="tabs-container"\>
+        \<div class="tabs-header"\>
+            \<button class="tab-button active" id="tab-btn-overview" data-tab="tab-overview"\>Overview\</button\>
+            \<button class="tab-button" id="tab-btn-dynamic" data-tab="tab-dynamic"\>Details\</button\>
+        \</div\>
+        
+                \<div class="tab-content active" id="tab-overview"\>
+            \<div class="info-section"\>
+                \<div class="info-title"\>Specific Benefits\</div\>
+                \<div class="info-content" id="Specific Benefits (min 50 to max 100 words) (K)"\>\</div\>
+            \</div\>
+            \<div class="info-section"\>
+                \<div class="info-title"\>Health Tags\</div\>
+                \<div class="info-content" id="Health Tags"\>\</div\>
+            \</div\>
+                    \</div\>
+        
+                 \<div class="tab-content" id="tab-dynamic"\>
+                    \</div\>
+    \</div\>
+    
+        \<div class="summary-card" id="ai-summary-section"\>
+        \<div class="info-title"\>✨ AI Summary\</div\>
+        \<button id="ai-summary-btn" class="ai-button"\>Generate AI Summary\</button\>
+        \<div class="info-content" id="ai-summary-content"\>
+            \<p class="no-data"\>Click the button to generate an AI-powered summary of this food's benefits.\</p\>
+        \</div\>
+    \</div\>
+    
+        \<div id="image-container" style="display: none;"\>
+        \<img id="food-image" src="" alt="Food Image"\>
+        \<div id="image-placeholder-text" style="display: none;"\>Image not available\</div\>
+    \</div\>
+
+\</div\>
+
+\<script\>
+    // ES5 Compatibility Polyfill for Array.prototype.find
+    if (\!Array.prototype.find) {
+      Object.defineProperty(Array.prototype, 'find', {
+        value: function(predicate) {
+         if (this == null) {
+           throw new TypeError('"this" is null or not defined');
+         }
+         var o = Object(this);
+         var len = o.length \>\>\> 0;
+         if (typeof predicate \!== 'function') {
+           throw new TypeError('predicate must be a function');
+         }
+         var thisArg = arguments[1];
+         var k = 0;
+         while (k \< len) {
+           var kValue = o[k];
+           if (predicate.call(thisArg, kValue, k, o)) {
+             return kValue;
+           }
+           k++;
+         }
+         return undefined;
+        },
+        configurable: true,
+        writable: true
+      });
+    }
+
+    // ES5 Compatibility Polyfill for Array.prototype.filter (Needed for the updated formatData function)
+    if (\!Array.prototype.filter) {
+      Array.prototype.filter = function(func, thisArg) {
+        'use strict';
+        if ( \! ((typeof func === 'function') && this) )
+            throw new TypeError();
+        
+        var len = this.length \>\>\> 0,
+            res = new Array(len),
+            t = this, c = 0, i = -1;
+
+        if (thisArg === undefined) {
+          while (++i \!== len) {
+            if (i in this) {
+              if (func(t[i], i, t)) {
+                res[c++] = t[i];
+              }
+            }
+          }
+        }
+        else {
+          while (++i \!== len) {
+            if (i in this) {
+              if (func.call(thisArg, t[i], i, t)) {
+                res[c++] = t[i];
+              }
+            }
+          }
+        }
+        
+        res.length = c;
+        return res;
+      };
+    }
+
+    // Using 'var' for ES5 compatibility
+    var foodData = {}; 
+
+    // Google Sheet URL
+    var CSV\_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQRQTEztCwC34GwFO1SN4evMaaZc2LxSMgI9Z8rgNh6VdiRPzRgswBFuXFWUxFd-g/pub?output=csv';
+
+    // --- Gemini API Configuration ---
+    // IMPORTANT: Replace "" with your actual Gemini API Key for AI features to work.
+    var API\_KEY = ""; // \<-- \*\*\*\* INSERT YOUR GEMINI API KEY HERE \*\*\*\*
+    var GEMINI\_TEXT\_MODEL = "gemini-1.5-flash-latest";
+    var GEMINI\_VISION\_MODEL = "gemini-1.5-flash-latest";
+    // --------------------------------
+
+    // Define markers globally for use in extraction logic.
+    // Includes variations like "Research:" or "Research basis" to maximize compatibility and fulfill requirements.
+// UPDATED: Changed GPT to Gen
+    var BASIS\_MARKERS = [
+        { basis: 'Research', patterns: ['research basis', 'research:'] },
+        { basis: 'Book', patterns: ['book basis', 'book:'] },
+        { basis: 'Gen', patterns: ['gen basis', 'gen:'] }
+    ];
+
+    // Helper function to define fields (allows custom display names)
+    function defineField(key, displayName) {
+        // If displayName is not provided, it will be null.
+        return { key: key, displayName: displayName || null };
+    }
+
+```
+// NEW: Helper function to get color based on basis key (references CSS variables)
+```
+
+    function getBasisColor(key) {
+        if (key === 'Research') return 'var(--color-basis-research)';
+        if (key === 'Book') return 'var(--color-basis-book)';
+        if (key === 'Gen') return 'var(--color-basis-gen)';
+        return 'inherit'; // Default color
+    }
+
+    // Configuration for the sections (icons)
+    // NOTE: Keys must match the CSV headers exactly.
+    var sectionDefinitions = {
+        "Nutrition": {
+            id: "nutrition",
+            icon: "fitness\_center",
+            colorVar: "--color-nutrition",
+            fields: [
+                defineField("Macros (100 g)"),
+                defineField("Micros (% RDA)"),
+                defineField("Macros Health Effect"),
+                defineField("Fat Type (%)"),
+                defineField("Fatty Acid Breakdown (%) (only for Oil)"),
+                defineField("Fatty Acid Composition (Detailed %) (only for Diary)"),
+                defineField("Omega Profile (n-3/n-6 ratio) (only for Oil)", "Omega Profile (n-3/n-6 ratio)"),
+                defineField("CLA & SCFA Profile (mg/g or %) (only for Diary)", "Probiotics")
+            ]
+        },
+        "Bioactives": {
+            id: "bioactives",
+            icon: "bolt",
+            colorVar: "--color-bioactives",
+            fields: [
+                defineField("Key Bioactives (mg/g)"),
+                defineField("TPC (mg GAE/g)"),
+                defineField("Antioxidant Compounds (Functional Breakdown)"),
+                defineField("Probiotic / Bioactive Peptide Insight (only for Diary)", "Probiotics")
+            ]
+        },
+        "Usage & Safety": {
+            id: "usage",
+            icon: "health\_and\_safety",
+            colorVar: "--color-usage",
+            fields: [
+                defineField("Ideal Preparation"),
+                defineField("Ideal Dosage"),
+                defineField("Maximiser"),
+                // Using the exact column name from the provided CSV link for reliability.
+                defineField("Potential health Impacts (wrong food pairing, consumption timings, over consumption) (P)", "Potential health Impacts"),
+                defineField("Clinical Synergy / Key Combinations (Only for herbs)", "Ayurvedic Synergy")
+            ]
+        },
+        "Metabolic": {
+            id: "metabolic",
+            icon: "speed",
+            colorVar: "--color-metabolic",
+            fields: [
+                defineField("Insulin Impact (GL)"),
+                defineField("Harmonal effects (U)"),
+                defineField("Modern Clinical Insight")
+            ]
+        },
+        // Renamed Section
+        "Fermentation": { 
+            id: "tradition",
+            icon: "bubble\_chart",
+            colorVar: "--color-tradition",
+            fields: [
+                defineField("Notes, Fermentation Effect", "Benefits of Fermentation and Methods"),
+                defineField("Fermentation Mechanism & Ayurvedic Parallel (only for Diary)")
+            ]
+        },
+        "Herbal Insights": {
+            id: "herbal",
+            icon: "eco",
+            colorVar: "--color-herbal",
+            fields: [
+                defineField("Active Phytochemical Class (only for Herbs)"),
+                defineField("Effect When Taken Before Food (Only for herbs)"),
+                defineField("Effect When Taken After Food (Only for herbs)"),
+                defineField("Timing Insight (Circadian / Metabolic Phase) (Only for herbs)", "Circadian / Metabolic Phase"),
+                defineField("Timing Insight (Neuroendocrine & Hormonal Synchrony) (only for herbs)", "Hormonal Synchrony")
+            ],
+            isConditional: true
+        },
+        "Notes/Wisdom": {
+            id: "notes",
+            icon: "history\_edu",
+            colorVar: "--color-notes",
+            fields: [
+                defineField("Notes / Traditional Wisdom"),
+                defineField("Ayurvedic Energetics & Lipid Function (only for Oil)"),
+                defineField("Ayurvedic Energetics in plain English (Only for herbs)", "Ayurvedic Energetics"),
+                defineField("Basis(Leaf/Root) (only for herbs)", "Herb Basis: Root/Leaf/Stem")
+            ]
+        },
+        "References": {
+            id: "references",
+            icon: "menu\_book",
+            colorVar: "--color-references",
+            fields: [
+                defineField("Cite (PubMed)"),
+                defineField("Project file references")
+            ]
+        }
+    };
+
+    // Initialize elements
+    var categorySelect, foodSelect, basisSelect, basisWrapper;
+    var mainContent = document.getElementById('main-content');
+    var loadingIndicator = document.getElementById('loading');
+    var selectionPanel = document.getElementById('selection-panel');
+    var dynamicTabContent = document.getElementById('tab-dynamic');
+    var dynamicTabButton = document.getElementById('tab-btn-dynamic');
+    var foodImage = document.getElementById('food-image');
+    var imageContainer = document.getElementById('image-container');
+    var imagePlaceholderText = document.getElementById('image-placeholder-text');
+    var dropdownsContainer = document.getElementById('dropdowns-container');
+    var selectionModal = document.getElementById('selection-modal');
+    var modalDropdownsTarget = document.getElementById('modal-dropdowns-target');
+
+    // AI Feature Elements
+    var aiModal = document.getElementById('ai-modal');
+    var modalMessage = document.getElementById('modal-message');
+    var modalSpinner = document.getElementById('modal-spinner');
+    var modalCloseBtn = document.getElementById('modal-close-btn');
+    var cameraInput = document.getElementById('camera-input');
+    var aiSummaryBtn = document.getElementById('ai-summary-btn');
+    var aiSummaryContent = document.getElementById('ai-summary-content');
+    var aiSummarySection = document.getElementById('ai-summary-section');
+    var cameraButtonElement = document.querySelector('.camera-button');
+
+    // --- Initialization and UI Setup ---
+
+    // Initialize the dropdown elements now that they are defined
+    function initializeDropdownElements() {
+        categorySelect = document.getElementById('category-select');
+        foodSelect = document.getElementById('food-select');
+        basisSelect = document.getElementById('basis-select');
+        basisWrapper = document.getElementById('basis-wrapper');
+        setupEventListeners();
+    }
+
+    // Function to manage dropdown placement based on screen size
+    function manageDropdownPlacement() {
+        // Check if screen width is mobile (less than 600px)
+        if (window.innerWidth \< 600) {
+            // Move dropdowns to the modal target
+            modalDropdownsTarget.appendChild(dropdownsContainer);
+        } else {
+            // Move dropdowns to the desktop selection panel
+            selectionPanel.appendChild(dropdownsContainer);
+        }
+        // Ensure the container is visible once moved (using flex for desktop compatibility)
+        dropdownsContainer.style.display = 'flex';
+    }
+
+    // Modal controls
+    function openSelectionModal() {
+        selectionModal.style.display = 'flex';
+        // Prevent background scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSelectionModal() {
+        selectionModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // --- Data Fetching and Processing ---
+
+    function fetchAndProcessData() {
+// Ensure camera button is disabled while loading
+if (cameraButtonElement) {
+cameraButtonElement.disabled = true;
+cameraButtonElement.title = "Loading data...";
+}
+        try {
+            Papa.parse(CSV\_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: 'greedy',
+                dynamicTyping: false,
+                complete: function(results) {
+                    if (results.errors.length \> 0) {
+                        console.warn("Errors during parsing:", results.errors);
+                    }
+                    if (results.data && results.data.length \> 0) {
+                        processCSVData(results.data);
+                        initializeUI();
+                    } else if (results.errors.length === 0) {
+                        console.error("No data fetched from CSV URL.");
+                        loadingIndicator.textContent = 'Error: No data received from Google Spreadsheet. Check URL and sharing settings.';
+                    }
+                },
+                error: function(error) {
+                    console.error("Error parsing CSV:", error);
+                    loadingIndicator.textContent = 'Error loading data. Check the URL and network connection.';
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            loadingIndicator.textContent = 'Error initializing application.';
+        }
+    }
+
+    // Processes the CSV data.
+    function processCSVData(data) {
+        var structuredData = {};
+
+        if (data.length === 0) return;
+
+        // --- Determine Structure and Keys ---
+        var headers = Object.keys(data[0]);
+        var CATEGORY\_KEY = null;
+        var FOOD\_KEY = null;
+        var BASIS\_KEY = null;
+        var isFlattened = false;
+
+        // 1. Attempt to find standardized keys
+        CATEGORY\_KEY = headers.find(function(h) { return h.trim().toLowerCase() === 'category'; });
+        FOOD\_KEY = headers.find(function(h) { return h.trim().toLowerCase() === 'food'; });
+        BASIS\_KEY = headers.find(function(h) { 
+            var lowerH = h.trim().toLowerCase();
+            return lowerH === 'basis'; 
+        });
+
+        if (CATEGORY\_KEY && FOOD\_KEY) {
+            isFlattened = (BASIS\_KEY === null);
+        } else {
+            // 2. Fallback logic
+            console.warn("Standard 'Category'/'Food' headers not found. Attempting fallback.");
+            
+             // Check if structure is Category, Sl No., Food (as in the provided link)
+            if (headers.length \>= 3 && headers[1].toLowerCase() === 'sl no.') {
+                CATEGORY\_KEY = headers[0];
+                FOOD\_KEY = headers[2];
+                isFlattened = (BASIS\_KEY === null);
+             }
+            else if (headers.length \>= 2) {
+                CATEGORY\_KEY = headers[0];
+                FOOD\_KEY = headers[1];
+                if (headers.length \>= 3 && headers[2].toLowerCase() \!== 'sl no.') {
+                    BASIS\_KEY = headers[2];
+                    isFlattened = false;
+                } else {
+                    isFlattened = true;
+                }
+            }
+            else {
+                console.error("CSV file structure is unrecognized or has insufficient columns.");
+                loadingIndicator.textContent = 'Error: Unrecognized CSV structure.';
+                return;
+            }
+        }
+
+        // If the structure is flattened (no 'Basis' column), assign the data to "All".
+        var DEFAULT\_BASIS = 'All'; 
+
+        // --- Process Data Rows ---
+        data.forEach(function(row) {
+            var categoryRaw = row[CATEGORY\_KEY];
+            var foodRaw = row[FOOD\_KEY];
+            
+            var basisRaw;
+
+            if (isFlattened) {
+                basisRaw = DEFAULT\_BASIS;
+            } else {
+                // Use the basis from the row. If the basis column exists but is empty for this row, we also default it.
+                basisRaw = (BASIS\_KEY && row[BASIS\_KEY] && row[BASIS\_KEY].trim() \!== "") ? row[BASIS\_KEY] : DEFAULT\_BASIS;
+            }
+
+            var category = categoryRaw ? categoryRaw.trim() : null;
+            var food = foodRaw ? foodRaw.trim() : null;
+            var basis = basisRaw ? basisRaw.trim() : null;
+            
+            // Standardize basis names if they are provided (e.g. R -\> Research), unless it is "All"
+// UPDATED: Changed GPT/G to Gen, including legacy 'gpt' check just in case.
+            if (basis && basis \!== 'All') {
+                if (basis.toUpperCase() === 'R' || basis.toLowerCase() === 'research') basis = 'Research';
+                else if (basis.toUpperCase() === 'B' || basis.toLowerCase() === 'book') basis = 'Book';
+                else if (basis.toUpperCase() === 'G' || basis.toLowerCase() === 'gen' || basis.toLowerCase() === 'gpt') basis = 'Gen';
+            }
+
+            if (\!category || \!food || \!basis) return;
+
+            if (\!structuredData[category]) {
+                structuredData[category] = {};
+            }
+            if (\!structuredData[category][food]) {
+                structuredData[category][food] = {};
+            }
+
+            // Note: Removed the optimization check for flattened structure here to ensure all rows are processed, 
+            // allowing data from multiple rows for the same food/basis to be appended if necessary.
+
+            Object.keys(row).forEach(function(key) {
+                var fieldName = key.trim();
+
+                // Skip identifiers and known irrelevant columns
+                if (fieldName === CATEGORY\_KEY || fieldName === FOOD\_KEY || fieldName.toLowerCase() === 'sl no.' || \!fieldName) {
+                    return;
+                }
+                
+                // Skip the basis key if it exists
+                if (BASIS\_KEY && fieldName === BASIS\_KEY) {
+                    return;
+                }
+
+                var valueRaw = row[key];
+                var value = valueRaw ? valueRaw.trim() : null;
+
+                if (value) {
+                    
+                    if (fieldName.toLowerCase() === 'image') {
+                        if (\!structuredData[category][food]['\_imageUrl']) {
+                            structuredData[category][food]['\_imageUrl'] = value;
+                        }
+                    } else {
+                        // Maintain the nested structure { Field: { Basis: Value } } 
+                        if (\!structuredData[category][food][fieldName]) {
+                            structuredData[category][food][fieldName] = {};
+                        }
+
+                        // Handle appending data
+                        if (structuredData[category][food][fieldName][basis]) {
+                            structuredData[category][food][fieldName][basis] += '\\n\\n' + value;
+                        } else {
+                            structuredData[category][food][fieldName][basis] = value;
+                        }
+                    }
+                }
+            });
+        });
+        foodData = structuredData;
+    }
+
+    // --- UI Initialization ---
+
+    function initializeUI() {
+        if (Object.keys(foodData).length === 0) {
+            // Check if a specific error message hasn't already been set
+            if (loadingIndicator.textContent.startsWith('Loading')) {
+               loadingIndicator.textContent = "Data processed, but no valid entries were found. Check CSV format and content.";
+            }
+            return;
+        }
+        
+        // Setup the dropdown elements and their placement
+        initializeDropdownElements();
+        manageDropdownPlacement();
+        // Add listener for window resize to re-evaluate placement
+        window.addEventListener('resize', manageDropdownPlacement);
+
+        populateCategories();
+        generateIconButtons();
+        setupTabListeners();
+// UPDATED: setupAIListeners is called here, ensuring data is loaded before enabling AI features.
+        setupAIListeners(); 
+        loadingIndicator.style.display = 'none';
+        // The selection panel display is now handled by CSS media queries and JS placement
+    }
+
+    function populateCategories() {
+        var categories = Object.keys(foodData).sort();
+        categories.forEach(function(category) {
+            var option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+    }
+
+    // Generates Icon buttons
+    function generateIconButtons() {
+        var iconRow = document.getElementById('icon-row');
+        iconRow.innerHTML = '';
+
+        for (var sectionName in sectionDefinitions) {
+            if (Object.prototype.hasOwnProperty.call(sectionDefinitions, sectionName)) {
+                var config = sectionDefinitions[sectionName];
+                var button = document.createElement('div');
+                button.className = 'icon-button';
+                button.id = 'icon-btn-' + config.id;
+                button.setAttribute('data-section', config.id);
+                button.setAttribute('data-color-var', config.colorVar);
+                button.setAttribute('title', sectionName);
+
+                // Generate Icon ONLY
+                button.innerHTML = '\<i class="material-icons"\>' + config.icon + '\</i\>';
+                
+                // ES5 compatibility closure for onclick event
+                button.onclick = (function(id, colorVar, name) {
+                    return function() {
+                        selectSection(id, colorVar, name);
+                    };
+                })(config.id, config.colorVar, sectionName);
+                
+                iconRow.appendChild(button);
+            }
+        }
+    }
+
+    // --- Event Listeners ---
+
+    // REVISED: Ensures content correctly refreshes when basis selection changes.
+    function setupEventListeners() {
+        categorySelect.addEventListener('change', function() {
+            var category = this.value;
+            foodSelect.innerHTML = '\<option value=""\>Select Food...\</option\>'; 
+            foodSelect.value = "";
+            mainContent.style.display = 'none';
+            imageContainer.style.display = 'none';
+            // Reset basis when category changes
+            basisSelect.value = "All";
+
+            if (category && foodData[category]) {
+                foodSelect.disabled = false;
+                var foods = Object.keys(foodData[category]).sort();
+                foods.forEach(function(food) {
+                    var option = document.createElement('option');
+                    option.value = food;
+                    option.textContent = food;
+                    foodSelect.appendChild(option);
+                });
+            } else {
+                foodSelect.disabled = true;
+            }
+        });
+
+        // When food changes, update the display
+        foodSelect.addEventListener('change', displayFoodDetails);
+        
+        // When basis changes, re-render the current food details
+        basisSelect.addEventListener('change', function() {
+            // Ensure a food is actually selected before trying to refresh
+            if (foodSelect.value && categorySelect.value) {
+                
+                // 1. Update Overview Tab content (This always runs)
+                populateOverview();
+                
+                // 2. Update Icon Visibility based on new basis
+                updateIconVisibility();
+
+                // 3. Update Details Tab content and handle section switching
+                var activeIcon = document.querySelector('.icon-button.active');
+                // Determine if we need a new section: if no icon is active OR the active icon is now hidden.
+                var needsNewSection = \!activeIcon || activeIcon.style.display === 'none';
+
+                // If the active icon exists but is now hidden, deactivate it.
+                if (activeIcon && needsNewSection) {
+                    activeIcon.classList.remove('active');
+                }
+
+                if (needsNewSection) {
+                     // Find the first visible icon
+                     var icons = document.querySelectorAll('.icon-button');
+                     var firstVisibleIcon = null;
+                     for (var i = 0; i \< icons.length; i++) {
+                         if (icons[i].style.display \!== 'none') {
+                             firstVisibleIcon = icons[i];
+                             break;
+                         }
+                     }
+
+                     if (firstVisibleIcon) {
+                         // Select the new section.
+                         var sectionId = firstVisibleIcon.getAttribute('data-section');
+                         var colorVar = firstVisibleIcon.getAttribute('data-color-var');
+                         var sectionName = firstVisibleIcon.getAttribute('title');
+                         
+                         // Force update the section content. 
+                         selectSection(sectionId, colorVar, sectionName, true);
+                         
+                         // If the Details tab is currently visible, we must ensure the colors update correctly for the new section immediately.
+                          if (document.getElementById('tab-btn-dynamic').classList.contains('active')) {
+                             updateColors(colorVar);
+                          }
+                             
+                     } else {
+                         // Handle case where no icons are visible for this basis
+                         dynamicTabContent.innerHTML = '\<p class="no-data"\>No detailed data available for this basis.\</p\>';
+                         
+                          // Reset color if on details tab
+                          if (document.getElementById('tab-btn-dynamic').classList.contains('active')) {
+                              updateColors('--color-overview');
+                          }
+                     }
+                } else if (activeIcon) {
+                    // If the active icon is still visible, just regenerate its content.
+                    var sectionId = activeIcon.getAttribute('data-section');
+                    generateDynamicContent(sectionId);
+                    // Colors don't need updating here as the section hasn't changed.
+                }
+            }
+        });
+    }
+
+    // --- AI Feature Listeners ---
+// UPDATED: This function now handles enabling the camera button if the API key is present.
+    function setupAIListeners() {
+        // Modal close button listener is always needed
+        modalCloseBtn.addEventListener('click', hideModal);
+
+        // Check if API Key is provided before enabling AI features
+        if (\!API\_KEY || API\_KEY.trim() === "") {
+            console.warn("Gemini API Key is missing. AI features (Camera, Summary, Recipe) will be disabled.");
+            // Update camera button status (it may have been disabled during loading)
+            if (cameraButtonElement) {
+cameraButtonElement.disabled = true;
+                cameraButtonElement.title = "AI Camera Disabled (Missing API Key)";
+            }
+            
+            // Hide the AI Summary section entirely if disabled
+            aiSummarySection.style.display = 'none';
+
+            return; // Exit setup if no key
+        }
+
+```
+    // --- API Key is present AND data is loaded (since this is called from initializeUI) ---
+    
+    // Enable the camera button
+    if (cameraButtonElement) {
+        cameraButtonElement.disabled = false;
+        cameraButtonElement.title = &quot;Identify Food&quot;;
+    }
+```
+
+        // Camera file input
+        cameraInput.addEventListener('change', handleImageUpload);
+        
+        // AI Summary button
+        aiSummaryBtn.addEventListener('click', getAISummary);
+    }
+
+    // --- Display Logic ---
+
+    // This is called when the FOOD selection changes.
+    function displayFoodDetails() {
+        var category = categorySelect.value;
+        var foodName = foodSelect.value;
+
+        // Close the modal if open (mobile view)
+        if (selectionModal && selectionModal.style.display === 'flex') {
+            closeSelectionModal();
+        }
+
+        if (category && foodName && foodData[category] && foodData[category][foodName]) {
+            var data = foodData[category][foodName];
+            document.getElementById('food-title').textContent = foodName;
+
+            // 0. Ensure Basis dropdown is visible and set correctly
+            manageBasisSelector(data);
+
+            // 1. Populate Overview Tab
+            populateOverview();
+            
+            // 2. Update Image Display
+            updateImageDisplay(data);
+
+            // 3. Update visibility of conditional icons
+            updateIconVisibility();
+
+            // 4. Select the first available visible icon
+            var icons = document.querySelectorAll('.icon-button');
+            var firstVisibleIcon = null;
+            for (var i = 0; i \< icons.length; i++) {
+                if (icons[i].style.display \!== 'none') {
+                    firstVisibleIcon = icons[i];
+                    break;
+                }
+            }
+            
+            if (firstVisibleIcon) {
+                var sectionId = firstVisibleIcon.getAttribute('data-section');
+                var colorVar = firstVisibleIcon.getAttribute('data-color-var');
+                // The section name is stored in the title attribute (e.g., "Fermentation")
+                var sectionName = firstVisibleIcon.getAttribute('title');
+
+                // Force update ensures the content is generated for the selected (or default) basis
+                selectSection(sectionId, colorVar, sectionName, true);
+            } else {
+                dynamicTabContent.innerHTML = '\<p class="no-data"\>No detailed data available.\</p\>';
+                dynamicTabButton.textContent = "Details";
+                document.querySelectorAll('.icon-button').forEach(function(btn) { btn.classList.remove('active'); });
+            }
+
+            // 5. Always switch to the Overview tab first when a new food is loaded
+            openTab('tab-overview');
+            mainContent.style.display = 'block';
+
+            // 6. Reset AI Summary content when food changes
+            if (API\_KEY && API\_KEY.trim() \!== "") {
+                aiSummaryContent.innerHTML = '\<p class="no-data"\>Click the button to generate an AI-powered summary of this food&\#39;s benefits.\</p\>';
+                aiSummaryBtn.disabled = false;
+            }
+
+        } else if (foodName === "") {
+            mainContent.style.display = 'none';
+            imageContainer.style.display = 'none';
+        }
+    }
+
+    // REVISED: Manages the Basis dropdown. Ensures it is always visible and options are always enabled.
+    function manageBasisSelector(data) {
+        // The basis wrapper should always be visible when a food is selected.
+        basisWrapper.style.display = 'flex';
+
+        // Ensure all options are enabled. The user should be able to select R/B/G/All at any time.
+        var options = basisSelect.options;
+        for (var i = 0; i \< options.length; i++) {
+            options[i].disabled = false;
+        }
+        
+        // Ensure a default selection if none is set (e.g., initial load)
+        if (basisSelect.value === "") {
+            basisSelect.value = 'All';
+        }
+    }
+
+    function updateImageDisplay(data) {
+        var imageUrl = data['\_imageUrl'];
+        
+        foodImage.style.display = 'none';
+        imagePlaceholderText.style.display = 'none';
+        imageContainer.style.display = 'none';
+
+        if (imageUrl && isValidContent(imageUrl)) {
+            foodImage.src = imageUrl;
+            
+            foodImage.onload = function() {
+                 foodImage.style.display = 'block';
+                 imageContainer.style.display = 'block';
+            };
+            foodImage.onerror = function() {
+                console.error("Failed to load image:", imageUrl);
+                imagePlaceholderText.textContent = "Image link broken or failed to load.";
+                imagePlaceholderText.style.display = 'block';
+                imageContainer.style.display = 'block';
+            };
+            
+        } else {
+            // Check if there is other data besides the image URL
+            var hasContentData = false;
+            for (var key in data) {
+                // Check that the key is not \_imageUrl AND that it holds meaningful data
+                if (Object.prototype.hasOwnProperty.call(data, key) && key \!== '\_imageUrl' && typeof data[key] === 'object' && data[key] \!== null && Object.keys(data[key]).length \> 0) {
+                    hasContentData = true;
+                    break;
+                }
+            }
+
+            if (hasContentData) {
+                 imagePlaceholderText.textContent = "Image not available in database.";
+                 imagePlaceholderText.style.display = 'block';
+                 imageContainer.style.display = 'block';
+            }
+        }
+    }
+
+    function updateIconVisibility() {
+         // This function relies on the currently selected Basis value
+         for (var sectionName in sectionDefinitions) {
+             if (Object.prototype.hasOwnProperty.call(sectionDefinitions, sectionName)) {
+                 var config = sectionDefinitions[sectionName];
+                 var iconButton = document.getElementById('icon-btn-' + config.id);
+                 
+                 if (iconButton) {
+                     // Check if the section has data for the CURRENTLY SELECTED basis
+                     if (checkIfSectionHasData(config.id)) {
+                         iconButton.style.display = 'flex';
+                     } else {
+                         // Hide if no data is found for the current basis
+                         iconButton.style.display = 'none';
+                     }
+                 }
+             }
+         }
+    }
+
+    function populateOverview() {
+        var category = categorySelect.value;
+        var foodName = foodSelect.value;
+        // Get the currently selected basis from the dropdown
+        var basis = basisSelect.value;
+        
+        // Safety check
+        if (\!category || \!foodName || \!foodData[category] || \!foodData[category][foodName]) return;
+
+        var data = foodData[category][foodName];
+
+        // These IDs must match the HTML IDs, which correspond to the CSV headers for the overview fields.
+        populateField("Specific Benefits (min 50 to max 100 words) (K)", data, basis);
+        populateField("Health Tags", data, basis);
+    }
+
+    // Handles the logic when an icon button is clicked
+    function selectSection(sectionId, colorVar, sectionName, forceUpdate) {
+        forceUpdate = forceUpdate || false;
+
+        var currentActive = document.querySelector('.icon-button.active');
+
+        // If clicking the already active icon (and not forcing update), just switch to the dynamic tab.
+        if (currentActive && currentActive.getAttribute('data-section') === sectionId && \!forceUpdate) {
+            openTab('tab-dynamic');
+            return;
+        }
+        
+        // Update active state
+        // We ensure any previously active icon is removed first.
+        if (currentActive) {
+             currentActive.classList.remove('active');
+        }
+        
+        var selectedButton = document.getElementById('icon-btn-' + sectionId);
+        if (selectedButton) {
+             selectedButton.classList.add('active');
+        }
+
+        // Generate content based on the currently selected basis
+        generateDynamicContent(sectionId);
+
+        // Update the tab button name
+        dynamicTabButton.textContent = sectionName;
+
+        // Decide whether to switch tabs. Color updates are handled within openTab or explicitly in the basis change listener if needed.
+        if (\!forceUpdate) {
+            // If triggered by user click, switch to the dynamic tab
+            openTab('tab-dynamic');
+        } 
+    }
+
+    // Checks if a specific section has any data for the selected basis
+    function checkIfSectionHasData(sectionId) {
+        var category = categorySelect.value;
+        var foodName = foodSelect.value;
+        // Check against the currently selected basis
+        var basis = basisSelect.value;
+
+        if (\!category || \!foodName || \!foodData[category] || \!foodData[category][foodName]) return false;
+        var data = foodData[category][foodName];
+
+        // Standard loop to find config
+        var config = null;
+        for (var key in sectionDefinitions) {
+            if (Object.prototype.hasOwnProperty.call(sectionDefinitions, key) && sectionDefinitions[key].id === sectionId) {
+                config = sectionDefinitions[key];
+                break;
+            }
+        }
+
+        if (\!config) return false;
+
+        for (var i = 0; i \< config.fields.length; i++) {
+            // Access the key property of the field object
+            var fieldKey = config.fields[i].key; 
+            
+            // formatData handles the logic of checking the specific basis
+            var content = formatData(data[fieldKey], basis);
+            if (isValidContent(content)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Generates the HTML content for the dynamic tab
+    function generateDynamicContent(sectionId) {
+        var category = categorySelect.value;
+        var foodName = foodSelect.value;
+        // Use the currently selected basis
+        var basis = basisSelect.value;
+
+        // Safety check
+        if (\!foodData[category] || \!foodData[category][foodName]) return;
+
+        var data = foodData[category][foodName];
+
+        // Standard loop to find config
+        var config = null;
+        for (var key in sectionDefinitions) {
+            if (Object.prototype.hasOwnProperty.call(sectionDefinitions, key) && sectionDefinitions[key].id === sectionId) {
+                config = sectionDefinitions[key];
+                break;
+            }
+        }
+
+        if (\!config) return;
+
+        var htmlContent = '';
+        var hasContent = false;
+
+        config.fields.forEach(function(fieldObject) {
+            // Use the key and displayName
+            var fieldKey = fieldObject.key;
+            var customDisplayName = fieldObject.displayName;
+
+            var content = formatData(data[fieldKey], basis);
+
+            if (isValidContent(content)) {
+                hasContent = true;
+                var displayContent = content;
+
+                // Apply reference formatting based on the field key
+// This function now handles content that may already have color spans.
+                if (fieldKey === "Cite (PubMed)" || fieldKey === "Modern Clinical Insight") {
+                    displayContent = formatReferences(displayContent);
+                }
+
+                var displayFieldName;
+                if (customDisplayName) {
+                    // Use the custom display name if provided
+                    displayFieldName = customDisplayName;
+                } else {
+                    // Fallback to automatic cleaning of the key
+                    displayFieldName = fieldKey.replace(/(only for .+)/gi, '').replace(/(.+)/g, '').trim();
+                }
+
+                htmlContent += '\<div class="info-section"\>' +
+                                     '\<div class="info-title"\>' + displayFieldName + '\</div\>' +
+                                     '\<div class="info-content"\>' + displayContent + '\</div\>' +
+                                '\</div\>';
+            }
+        });
+
+        // --- Add AI Recipe Button to "Usage" section ---
+        // Only add if the API key is present
+        if (sectionId === 'usage' && API\_KEY && API\_KEY.trim() \!== "") {
+
+            htmlContent += '\<div class="info-section"\>' +
+                                 '\<div class="info-title"\>✨ Recipe Idea\</div\>' +
+                                 '\<button id="ai-recipe-btn" class="ai-button"\>Get Recipe Idea\</button\>' +
+                                 '\<div class="info-content" id="ai-recipe-content"\>' +
+                                     '\<p class="no-data"\>Click the button for a healthy recipe idea.\</p\>' +
+                                 '\</div\>' +
+                             '\</div\>';
+            hasContent = true;
+        }
+        // ------------------------------------------------
+
+        if (hasContent) {
+            dynamicTabContent.innerHTML = htmlContent;
+
+            // Add listener for the recipe button *after* it's added to the DOM
+            if (sectionId === 'usage' && API\_KEY && API\_KEY.trim() \!== "") {
+                var recipeBtn = document.getElementById('ai-recipe-btn');
+                if (recipeBtn) {
+                    recipeBtn.addEventListener('click', getRecipeIdea);
+                }
+            }
+        } else {
+             dynamicTabContent.innerHTML = '\<p class="no-data"\>No data available for this section under the selected basis.\</p\>';
+        }
+    }
+
+    // --- Helper Functions ---
+
+    // \*\*\* NEW FUNCTION: Exhaustive Truncation Logic Implementation \*\*\*
+    // Helper function to implement the exhaustive text truncation logic
+    // This addresses issues where data for different bases (R/B/G) is combined in a single text block (often under the 'All' basis).
+    function extractBasisContent(fullText, selectedBasis) {
+        if (\!fullText || \!selectedBasis || selectedBasis === 'All') {
+            // Should not be called if 'All' is selected, but handled defensively.
+            return null;
+        }
+
+        // Use case-insensitive searching
+        var lowerText = fullText.toLowerCase();
+        var startIndex = -1;
+        var endIndex = -1;
+
+        // 1. Find the start index for the selected basis using the globally defined BASIS\_MARKERS
+        var selectedMarkerConfig = null;
+        
+        // ES5 compatible loop
+        for (var m = 0; m \< BASIS\_MARKERS.length; m++) {
+            if (BASIS\_MARKERS[m].basis === selectedBasis) {
+                selectedMarkerConfig = BASIS\_MARKERS[m];
+                break;
+            }
+        }
+        
+        if (selectedMarkerConfig) {
+            for (var i = 0; i \< selectedMarkerConfig.patterns.length; i++) {
+                var index = lowerText.indexOf(selectedMarkerConfig.patterns[i]);
+                if (index \!== -1) {
+                    // If we find a match, we check if it's earlier than a previously found match (if any)
+                    if (startIndex === -1 || index \< startIndex) {
+                        startIndex = index;
+                    }
+                }
+            }
+        }
+
+        // If the specific basis marker is not found in the text, we assume the data is not present for this basis in this block.
+        if (startIndex === -1) {
+            return null; 
+        }
+
+        // 2. Find the end index (the start of the next basis: Book, Gen, or Research)
+        var potentialEndIndices = [];
+        
+        // Iterate through all markers OTHER than the selected one to find the next section start.
+        BASIS\_MARKERS.forEach(function(marker) {
+            if (marker.basis \!== selectedBasis) {
+                marker.patterns.forEach(function(pattern) {
+                    // Search for the next marker starting AFTER the current section's beginning.
+                    var index = lowerText.indexOf(pattern, startIndex + 1);
+                    if (index \!== -1) {
+                        potentialEndIndices.push(index);
+                    }
+                });
+            }
+        });
+
+        if (potentialEndIndices.length \> 0) {
+            // Find the earliest occurring next marker to define the end of the current section.
+            // ES5 compatibility for Math.min
+            endIndex = Math.min.apply(null, potentialEndIndices);
+        }
+
+        // 3. Extract the content
+        var result;
+        if (endIndex \!== -1 && endIndex \> startIndex) {
+            // Return the substring between the start of the selected basis and the start of the next basis.
+            result = fullText.substring(startIndex, endIndex).trim();
+        } else {
+            // If no subsequent basis is found, return everything from the start index to the end of the text.
+            result = fullText.substring(startIndex).trim();
+        }
+
+        return result;
+    }
+
+```
+// UPDATED: Checks content validity, ignoring HTML tags.
+```
+
+    function isValidContent(content) {
+if (content === null || typeof content === 'undefined') return false;
+
+```
+    // Remove HTML tags (like color spans) before checking validity
+    // This regex is safer than creating DOM elements from potentially unsafe strings
+    var textOnly = content.toString().replace(/&lt;[^&gt;]*&gt;/g, &#39;&#39;).trim();
+```
+
+        return textOnly \!== "" && textOnly.toUpperCase() \!== "N/A";
+    }
+
+    function updateColors(colorVar) {
+        document.documentElement.style.setProperty('--current-active-color', 'var(' + colorVar + ')');
+    }
+
+    function setupTabListeners() {
+        document.querySelectorAll('.tab-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+                openTab(this.getAttribute('data-tab'));
+            });
+        });
+    }
+
+    function openTab(tabId) {
+        if (tabId === 'tab-overview') {
+            updateColors("--color-overview");
+        } else {
+            var activeIcon = document.querySelector('.icon-button.active');
+            if (activeIcon) {
+                updateColors(activeIcon.getAttribute('data-color-var'));
+            } else {
+                // Fallback if no icon is active (e.g., if all icons are hidden)
+                updateColors("--color-overview");
+            }
+        }
+
+        document.querySelectorAll('.tab-content').forEach(function(tc) { tc.classList.remove('active'); });
+        document.getElementById(tabId).classList.add('active');
+
+        document.querySelectorAll('.tab-button').forEach(function(button) {
+            if (button.getAttribute('data-tab') === tabId) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
+
+    // \*\*\* UPDATED FUNCTION \*\*\*
+    // REVISED: Formats the data based on the selected basis, implements truncation logic, and applies colors.
+    function formatData(data, basis) {
+        if (\!data) return null;
+
+        // Scenario 1: User selected a specific basis (R, B, or G)
+        if (basis \!== 'All') {
+var color = getBasisColor(basis);
+
+            // 1. Priority Check: Does data exist specifically under this basis key (R, B, or G)?
+            // This handles data structured with distinct basis entries.
+            if (data[basis] && isValidContent(data[basis])) {
+// Apply color styling
+               return '\<span style="color: ' + color + ';"\>' + data[basis] + '\</span\>';
+            }
+
+            // 2. Fallback Check: If not found, iterate over ALL keys (including 'All') and attempt extraction.
+            // This handles flattened data where R/B/G content is combined in one block.
+            var keys = Object.keys(data);
+            for (var i = 0; i \< keys.length; i++) {
+                var content = data[keys[i]];
+                if (isValidContent(content)) {
+                    // Use the new truncation/extraction logic
+                    var extractedContent = extractBasisContent(content, basis);
+                    if (isValidContent(extractedContent)) {
+// Apply color styling
+                        return '\<span style="color: ' + color + ';"\>' + extractedContent + '\</span\>';
+                    }
+                }
+            }
+            
+            // 3. If nothing is found after all checks, return null.
+            return null;
+        }
+
+        // Scenario 2: User selected "All"
+        
+        // Identify keys that have valid content (using the ES5 compatible filter polyfill)
+        var validKeys = Object.keys(data).filter(function(k) { return isValidContent(data[k]); });
+
+```
+    // Check if the data is truly flattened (only &quot;All&quot; key exists and has content, AND it doesn&#39;t contain internal basis markers)
+    if (data[&quot;All&quot;] &amp;&amp; validKeys.length === 1 &amp;&amp; validKeys[0] === &quot;All&quot;) {
+        // Check if the &quot;All&quot; content contains any internal markers (Research:, Book:, Gen:)
+        var containsMarkers = false;
+        var lowerAllContent = data[&quot;All&quot;].toLowerCase();
+        for (var m = 0; m &lt; BASIS_MARKERS.length; m++) {
+            for (var p = 0; p &lt; BASIS_MARKERS[m].patterns.length; p++) {
+                if (lowerAllContent.indexOf(BASIS_MARKERS[m].patterns[p]) !== -1) {
+                    containsMarkers = true;
+                    break;
+                }
+            }
+            if (containsMarkers) break;
+        }
+
+        // If it does NOT contain markers, return it as is (default color).
+        if (!containsMarkers) {
+```
+
+                return data["All"];
+}
+// If it DOES contain markers, we fall through to the combination logic below.
+// Note: Applying colors accurately when markers are mixed in a single "All" block is very complex
+// without parsing the text entirely. For now, we display it combined but cannot easily color-code
+// the segments within a single block in this structure.
+        }
+
+        // If not flattened (or if multiple keys exist), combine all available bases.
+        var content = [];
+        validKeys.sort(); // Sort for consistency (e.g., All, Book, Gen, Research)
+
+        validKeys.forEach(function(key) {
+var color = getBasisColor(key);
+             // Show labels if more than one basis is present
+             if (validKeys.length \> 1) {
+                 // Use the first letter of the basis name as the label (A, B, G, R)
+                 var label = key.charAt(0).toUpperCase();
+// Apply color styling to the whole block including the label
+                 content.push('\<span style="color: ' + color + ';"\>\<strong\>[' + label + ']\</strong\> ' + data[key] + '\</span\>');
+             } else {
+                 // If only one basis exists (and it wasn't just 'All' caught above), just show the content
+// Apply color styling if it's not 'All'
+if (key \!== 'All') {
+content.push('\<span style="color: ' + color + ';"\>' + data[key] + '\</span\>');
+} else {
+                     content.push(data[key]);
+}
+             }
+        });
+
+        var combined = content.join('\\n\\n');
+        return combined || null;
+    }
+
+    // Populates a specific field in the Overview tab (uses element ID matching the CSV Key)
+    function populateField(fieldKey, data, basis) {
+        var element = document.getElementById(fieldKey);
+        if (element) {
+            var content = formatData(data[fieldKey], basis);
+// Check validity using the helper that strips HTML tags
+            if (\!isValidContent(content)) {
+                element.innerHTML = '\<span class="no-data"\>N/A or not available for the selected basis.\</span\>';
+            } else {
+                element.innerHTML = content;
+            }
+        }
+    }
+
+    // Converts PMC/PMID text into clickable hyperlinks
+// UPDATED: Robustly handles inserting links within existing color spans.
+    function formatReferences(text) {
+        if (\!text) return text;
+       
+// We use a temporary placeholder to safely apply links within HTML structures (like color spans)
+// This prevents regex from accidentally matching HTML attributes or breaking span tags.
+var placeholder = 'TEMP\_REF\_PLACEHOLDER\_';
+var counter = 0;
+var refs = [];
+
+```
+    // Function to process content (either raw text or text extracted from a span)
+    function processContent(content) {
+        // Link PMC IDs
+        var linkedContent = content.replace(/(PMC\d+)/g, function(pmcMatch) {
+            var refId = placeholder + counter++;
+            refs.push({id: refId, url: &quot;https://www.ncbi.nlm.nih.gov/pmc/articles/&quot; + pmcMatch + &quot;/&quot;, label: pmcMatch});
+            return refId;
+        });
+
+        // Link PMID IDs
+        linkedContent = linkedContent.replace(/(PMID\s*[:]?\s*)(\d+)/gi, function(pmidMatch, prefix, id) {
+            var refId = placeholder + counter++;
+            var label = &#39;PMID:&#39; + id;
+            refs.push({id: refId, url: &quot;https://pubmed.ncbi.nlm.nih.gov/&quot; + id + &quot;/&quot;, label: label});
+            return refId;
+        });
+        return linkedContent;
+    }
+
+    // Check if the text contains color spans (the most common HTML here)
+    var processedText;
+    // Use a simple check for the specific span structure we generate
+    if (text.indexOf(&#39;&lt;span style=&quot;color:&#39;) !== -1) {
+        // If spans exist, extract content, process it, and put it back.
+        // This regex matches our generated spans.
+        processedText = text.replace(/&lt;span style=&quot;color: (.*?)&quot;&gt;(.*?)&lt;\/span&gt;/g, function(match, color, content) {
+            var linkedContent = processContent(content);
+            return &#39;&lt;span style=&quot;color: &#39; + color + &#39;&quot;&gt;&#39; + linkedContent + &#39;&lt;/span&gt;&#39;;
+        });
+    } else {
+        // If no spans, process the raw text directly.
+        processedText = processContent(text);
+    }
+
+    // Replace placeholders with actual links
+    refs.forEach(function(ref) {
+        // The &lt;a&gt; tag styling is handled by CSS to ensure visibility on different backgrounds.
+        processedText = processedText.replace(ref.id, &#39;&lt;a href=&quot;&#39; + ref.url + &#39;&quot; target=&quot;_blank&quot;&gt;&#39; + ref.label + &#39;&lt;/a&gt;&#39;);
+    });
+```
+
+        return processedText;
+    }
+    
+    // --- AI Modal Functions ---
+    function showModal(message, showSpinner, showCloseBtn) {
+        modalMessage.textContent = message;
+        modalSpinner.style.display = showSpinner ? 'block' : 'none';
+        modalCloseBtn.style.display = showCloseBtn ? 'block' : 'none';
+        aiModal.style.display = 'flex';
+    }
+
+    function hideModal() {
+        aiModal.style.display = 'none';
+    }
+
+    // --- Gemini API Call Function ---
+
+    /\*\*
+     \* Generic function to call the Gemini API with exponential backoff.
+     \* Note: This relies on Fetch API and Promises, which may require polyfills for true ES5 compatibility (e.g., Internet Explorer).
+     \*/
+    function callGeminiAPI(apiUrl, payload, retries, delay) {
+        retries = retries === undefined ? 3 : retries;
+        delay = delay === undefined ? 1000 : delay;
+
+        // Basic check for API Key
+        if (\!API\_KEY || API\_KEY.trim() === "") {
+            // Ensure Promise exists (for very old browsers, a polyfill might be needed)
+            if (typeof Promise === 'undefined') {
+                console.error("Promises not supported in this browser.");
+                return;
+            }
+            return Promise.reject(new Error("API Key is missing."));
+        }
+
+        // Ensure Fetch exists (for very old browsers, a polyfill might be needed)
+        if (typeof fetch === 'undefined') {
+            console.error("Fetch API not supported in this browser.");
+            return;
+        }
+
+        return fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function(response) {
+            if (\!response.ok) {
+                // Try to get more details from the response body
+                return response.text().then(function(text) {
+                    throw new Error('HTTP error\! status: ' + response.status + ', Body: ' + text);
+                });
+            }
+            return response.json();
+        })
+        .catch(function(error) {
+            console.warn('API call failed. Retries left: ' + retries, error.message);
+            // Check for specific errors like invalid API key
+            if (error.message.indexOf("400") \!== -1 || error.message.indexOf("403") \!== -1) {
+                throw new Error('API call failed: Invalid request or API Key.');
+            }
+
+            if (retries \> 0) {
+                return new Promise(function(resolve) {
+                    setTimeout(resolve, delay);
+                }).then(function() {
+                    return callGeminiAPI(apiUrl, payload, retries - 1, delay \* 2);
+                });
+            } else {
+                throw new Error('API call failed after all retries: ' + error.message);
+            }
+        });
+    }
+
+    // --- Gemini Feature: AI Summary ---
+
+    function getAISummary() {
+        var category = categorySelect.value;
+        var foodName = foodSelect.value;
+        if (\!category || \!foodName) return;
+
+        var data = foodData[category][foodName];
+        if (\!data) return;
+
+        aiSummaryBtn.disabled = true;
+        aiSummaryContent.innerHTML = '\<div class="spinner" style="margin: 0;"\>\</div\>\<p style="margin-top: 10px;"\>Generating summary...\</p\>';
+
+        var systemPrompt = "You are a friendly and knowledgeable nutritionist. Based on the following raw data about a food, provide a concise, easy-to-read summary (about 2-3 paragraphs) for a layperson. Highlight its main benefits, key nutritional components, and any important usage or safety considerations. Do not just list the data; synthesize it into a coherent summary.";
+        
+        // Simplify data for the prompt, sending all available basis data
+        var promptData = {};
+        for (var key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key) && key \!== '\_imageUrl' && data[key]) {
+                // Use formatData with 'All' to combine all bases for the AI context
+                var combinedValue = formatData(data[key], 'All');
+
+```
+            // CRITICAL: Remove HTML tags (like &lt;span&gt; and &lt;strong&gt;) from the content sent to AI
+            if (combinedValue) {
+                // Use the safe regex replacement method
+                combinedValue = combinedValue.replace(/&lt;[^&gt;]*&gt;/g, &#39;&#39;);
+            }
+```
+
+                if (isValidContent(combinedValue)) {
+                    // We send the raw key (CSV column name) to the AI.
+                    promptData[key] = combinedValue;
+                }
+            }
+        }
+        var userQuery = "Here is the data for " + foodName + ": \\n" + JSON.stringify(promptData) + "\\n\\n Please provide the summary.";
+        
+        var payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+// Include system instruction if the model supports it
+...(GEMINI\_TEXT\_MODEL.includes("1.5") && {
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            }
+})
+        };
+
+```
+    // Fallback for system prompt if not supported
+    if (!payload.systemInstruction) {
+        payload.contents[0].parts[0].text = systemPrompt + &quot;\n\n&quot; + userQuery;
+    }
+```
+
+        var apiUrl = 'https://www.google.com/search?q=https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI\_TEXT\_MODEL + ':generateContent?key=' + API\_KEY;
+
+        callGeminiAPI(apiUrl, payload)
+            .then(function(result) {
+                var text = result.candidates[0].content.parts[0].text;
+                // Basic Markdown/Text to HTML conversion
+                aiSummaryContent.innerHTML = text.replace(/\\n/g, '<br>').replace(/\*\*(.\*?)\*\*/g, '\<strong\>$1\</strong\>');
+                aiSummaryBtn.disabled = false;
+            })
+            .catch(function(error) {
+                console.error("AI Summary Error:", error);
+                aiSummaryContent.innerHTML = '\<p class="no-data" style="color: red;"\>Error generating summary. ' + error.message + '\</p\>';
+                aiSummaryBtn.disabled = false;
+            });
+    }
+
+    // --- Gemini Feature: Recipe Idea ---
+
+    function getRecipeIdea() {
+        var foodName = foodSelect.value;
+        if (\!foodName) return;
+
+        var recipeBtn = document.getElementById('ai-recipe-btn');
+        var recipeContent = document.getElementById('ai-recipe-content');
+        
+        recipeBtn.disabled = true;
+        recipeContent.innerHTML = '\<div class="spinner" style="margin: 0;"\>\</div\>\<p style="margin-top: 10px;"\>Generating recipe...\</p\>';
+
+        var systemPrompt = "You are a creative and healthy-living chef. You provide simple, healthy recipe ideas in 1-2 paragraphs.";
+        var userQuery = "Give me a simple, healthy recipe idea that features " + foodName + ".";
+
+        var payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+...(GEMINI\_TEXT\_MODEL.includes("1.5") && {
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            }
+})
+        };
+
+```
+    // Fallback for system prompt
+    if (!payload.systemInstruction) {
+        payload.contents[0].parts[0].text = systemPrompt + &quot;\n\n&quot; + userQuery;
+    }
+```
+
+        var apiUrl = 'https://www.google.com/search?q=https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI\_TEXT\_MODEL + ':generateContent?key=' + API\_KEY;
+
+        callGeminiAPI(apiUrl, payload)
+            .then(function(result) {
+                var text = result.candidates[0].content.parts[0].text;
+                recipeContent.innerHTML = text.replace(/\\n/g, '<br>').replace(/\*\*(.\*?)\*\*/g, '\<strong\>$1\</strong\>');
+                recipeBtn.disabled = false;
+            })
+            .catch(function(error) {
+                console.error("AI Recipe Error:", error);
+                recipeContent.innerHTML = '\<p class="no-data" style="color: red;"\>Error generating recipe. ' + error.message + '\</p\>';
+                recipeBtn.disabled = false;
+            });
+    }
+
+    // --- Gemini Feature: Camera Identification ---
+
+    function triggerCamera() {
+        // Check if the button is disabled (due to missing API key or data not loaded)
+        if (cameraButtonElement && cameraButtonElement.disabled) {
+// Provide a more helpful message if disabled
+if (\!API\_KEY || API\_KEY.trim() === "") {
+               showModal("Camera feature is disabled because the Gemini API Key is missing.", false, true);
+} else {
+showModal("Please wait, data is still loading.", false, true);
+}
+            return;
+        }
+        // Click the hidden file input to open the camera or file selector
+        cameraInput.click();
+    }
+
+    function handleImageUpload(event) {
+        var file = event.target.files[0];
+        if (\!file) return;
+
+        showModal("Processing image...", true, false);
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var base64ImageData = e.target.result.split(',')[1]; // Get only the base64 data
+            var mimeType = file.type || "image/jpeg";
+            identifyFoodInImage(base64ImageData, mimeType);
+        };
+        reader.onerror = function(error) {
+            console.error("File Reader Error:", error);
+            showModal("Failed to read image.", false, true);
+        };
+        reader.readAsDataURL(file);
+
+        // Reset the input value
+        event.target.value = null;
+    }
+
+    function identifyFoodInImage(base64ImageData, mimeType) {
+        showModal("Identifying food...", true, false);
+
+        var payload = {
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: "Identify the single, most prominent food item in this image. Respond with only the name of the food (e.g., \&quot;Apple\&quot;, \&quot;Banana\&quot;, \&quot;Almonds\&quot;). Do not add any other text or punctuation." },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64ImageData
+                            }
+                        }
+                    ]
+                }
+            ],
+        };
+
+        var apiUrl = 'https://www.google.com/search?q=https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI\_VISION\_MODEL + ':generateContent?key=' + API\_KEY;
+
+        callGeminiAPI(apiUrl, payload)
+            .then(function(result) {
+                var aiFoodName = result.candidates[0].content.parts[0].text;
+                aiFoodName = aiFoodName.trim().replace(/["."]/g, ''); // Clean up response
+                findAndSelectFood(aiFoodName);
+            })
+            .catch(function(error) {
+                console.error("AI Vision Error:", error);
+                showModal("Error identifying food. " + error.message, false, true);
+            });
+    }
+
+```
+// --- Robust Matching Logic ---
+// This section implements the &quot;robust API-free logic&quot; for matching identified names to the database.
+
+// NEW: Helper function for robust matching: Normalizes text
+function normalizeText(text) {
+    if (!text) return &quot;&quot;;
+    // Lowercase, remove punctuation (except hyphens within words), trim
+    // We use a regex compatible with older JS: replace characters that are NOT a-z, 0-9, space, or hyphen.
+    var normalized = text.toLowerCase().replace(/[^a-z0-9\s-]/g, &#39;&#39;).trim();
+    
+    // Simple plural handling (very basic normalization)
+    // This helps match &quot;Almonds&quot; to &quot;Almond&quot; or vice versa.
+    if (normalized.endsWith(&#39;s&#39;) &amp;&amp; normalized.length &gt; 3) {
+        // Remove the &#39;s&#39; but return both versions for better matching potential
+        return [normalized, normalized.substring(0, normalized.length - 1)];
+    }
+    return [normalized];
+}
+
+// NEW: Helper function for robust matching: Calculates match score between normalized arrays
+function calculateMatchScore(aiNamesNorm, dbNameNorm) {
+    var bestScore = 0;
+
+    // Iterate over potential variations (e.g., plural/singular)
+    aiNamesNorm.forEach(function(aiName) {
+        var score = 0;
+        if (aiName === dbNameNorm) {
+            score = 100; // Perfect match
+        } else if (aiName.indexOf(dbNameNorm) !== -1 || dbNameNorm.indexOf(aiName) !== -1) {
+            // Check containment (e.g., &quot;Salmon&quot; vs &quot;Wild Salmon&quot;)
+            // Penalize if the difference in length is large (e.g. &quot;Nut&quot; matching &quot;Peanut Butter&quot;)
+            var lengthDiff = Math.abs(aiName.length - dbNameNorm.length);
+            score = 90 - (lengthDiff * 2); // Heuristic penalty for length difference
+        } else {
+            // Token matching (handles different word orders or extra words)
+            var aiTokens = aiName.split(/\s+/);
+            var dbTokens = dbNameNorm.split(/\s+/);
+            var matches = 0;
+            aiTokens.forEach(function(token) {
+                if (dbTokens.indexOf(token) !== -1) {
+                    matches++;
+                }
+            });
+
+            // Calculate percentage of tokens matched
+            score = (matches / Math.max(aiTokens.length, dbTokens.length)) * 80;
+        }
+
+        if (score &gt; bestScore) {
+            bestScore = score;
+        }
+    });
+    
+    return bestScore;
+}
+
+
+// REVISED: Uses scoring and normalization for more robust matching
+```
+
+    function findAndSelectFood(aiFoodName) {
+// Normalize the AI name (returns an array of possibilities)
+        var aiNamesNorm = normalizeText(aiFoodName);
+
+```
+    var bestMatch = {
+        category: null,
+        food: null,
+        score: 0
+    };
+    
+    // Define a minimum threshold for matching
+    var MIN_SCORE_THRESHOLD = 60; 
+```
+
+        // Loop through all categories and foods to find the best match
+        for (var category in foodData) {
+            if (Object.prototype.hasOwnProperty.call(foodData, category)) {
+                for (var food in foodData[category]) {
+                    if (Object.prototype.hasOwnProperty.call(foodData[category], food)) {
+
+```
+                    // Clean the database name (remove content in parentheses first)
+                    var dbNameClean = food.replace(/\(.*?\)/g, &#39;&#39;).trim();
+                    // Normalize the database name (we only take the first element as we want the primary name)
+```
+
+                        var dbNameNorm = normalizeText(dbNameClean)[0];
+
+```
+                    // Calculate score between AI possibilities and the database name
+                    var score = calculateMatchScore(aiNamesNorm, dbNameNorm);
+```
+
+                        if (score \> bestMatch.score) {
+bestMatch.score = score;
+bestMatch.category = category;
+bestMatch.food = food;
+}
+                    }
+                }
+            }
+        }
+
+        if (bestMatch.category && bestMatch.score \>= MIN\_SCORE\_THRESHOLD) {
+var matchedFood = bestMatch.food;
+var matchedCategory = bestMatch.category;
+
+```
+        // Display the match confidence to the user
+```
+
+            showModal("Found: " + matchedFood + "\!\\n(Confidence: " + Math.round(bestMatch.score) + "%)", true, false);
+            
+            // Set category
+            categorySelect.value = matchedCategory;
+            
+            // Manually trigger the 'change' event
+            var event;
+            if (typeof(Event) === 'function') {
+                event = new Event('change');
+            } else {
+                // Fallback for older browsers
+                event = document.createEvent('Event');
+                event.initEvent('change', true, true);
+            }
+            categorySelect.dispatchEvent(event);
+
+            // Set food (must happen *after* the food list is populated)
+            foodSelect.value = matchedFood;
+
+            // Update the display
+            foodSelect.dispatchEvent(event);
+            
+// Extended time to allow user to see the confidence score
+            setTimeout(hideModal, 2000);
+        } else {
+// Improved feedback when match fails, showing the closest option if one exists
+var message = "AI identified: " + aiFoodName + ".\\nNot found or low confidence match in our database.";
+if (bestMatch.category) {
+message += "\\n(Closest match: " + bestMatch.food + ", Confidence: " + Math.round(bestMatch.score) + "%)";
+}
+            showModal(message, false, true);
+        }
+    }
+
+    // Initialize the application by fetching data
+    fetchAndProcessData();
+
+\</script\>
+
+\</body\>
+\</html\>
