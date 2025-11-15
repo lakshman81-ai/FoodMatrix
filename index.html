@@ -828,102 +828,108 @@
         return { key: key, displayName: displayName || null };
     }
 
-    // Configuration for the sections (icons)
-    // NOTE: Keys must match the CSV headers exactly.
-    var sectionDefinitions = {
-        "Nutrition": {
-            id: "nutrition",
-            icon: "fitness_center",
-            colorVar: "--color-nutrition",
-            fields: [
-                defineField("Macros (100 g)"),
-                defineField("Micros (% RDA)"),
-                defineField("Macros Health Effect"),
-                defineField("Fat Type (%)"),
-                defineField("Fatty Acid Breakdown (%) (only for Oil)"),
-                defineField("Fatty Acid Composition (Detailed %) (only for Diary)"),
-                defineField("Omega Profile (n-3/n-6 ratio) (only for Oil)", "Omega Profile (n-3/n-6 ratio)"),
-                defineField("CLA & SCFA Profile (mg/g or %) (only for Diary)", "Probiotics")
-            ]
-        },
-        "Bioactives": {
-            id: "bioactives",
-            icon: "bolt",
-            colorVar: "--color-bioactives",
-            fields: [
-                defineField("Key Bioactives (mg/g)"),
-                defineField("TPC (mg GAE/g)"),
-                defineField("Antioxidant Compounds (Functional Breakdown)"),
-                defineField("Probiotic / Bioactive Peptide Insight (only for Diary)", "Probiotics")
-            ]
-        },
-        "Usage & Safety": {
-            id: "usage",
-            icon: "health_and_safety",
-            colorVar: "--color-usage",
-            fields: [
-                defineField("Ideal Preparation"),
-                defineField("Ideal Dosage"),
-                defineField("Maximiser"),
-                // Using the exact column name from the provided CSV link for reliability.
-                defineField("Potential health Impacts (wrong food pairing, consumption timings, over consumption) (P)", "Potential health Impacts"),
-                defineField("Clinical Synergy / Key Combinations (Only for herbs)", "Ayurvedic Synergy")
-            ]
-        },
-        "Metabolic": {
-            id: "metabolic",
-            icon: "speed",
-            colorVar: "--color-metabolic",
-            fields: [
-                defineField("Insulin Impact (GL)"),
-                defineField("Harmonal effects (U)"),
-                defineField("Modern Clinical Insight")
-            ]
-        },
-        // Renamed Section
-        "Fermentation": { 
-            id: "tradition",
-            icon: "bubble_chart",
-            colorVar: "--color-tradition",
-            fields: [
-                defineField("Notes, Fermentation Effect", "Benefits of Fermentation and Methods"),
-                defineField("Fermentation Mechanism & Ayurvedic Parallel (only for Diary)")
-            ]
-        },
-        "Herbal Insights": {
-            id: "herbal",
-            icon: "eco",
-            colorVar: "--color-herbal",
-            fields: [
-                defineField("Active Phytochemical Class (only for Herbs)"),
-                defineField("Effect When Taken Before Food (Only for herbs)"),
-                defineField("Effect When Taken After Food (Only for herbs)"),
-                defineField("Timing Insight (Circadian / Metabolic Phase) (Only for herbs)", "Circadian / Metabolic Phase"),
-                defineField("Timing Insight (Neuroendocrine & Hormonal Synchrony) (only for herbs)", "Hormonal Synchrony")
-            ],
-            isConditional: true
-        },
-        "Notes/Wisdom": {
-            id: "notes",
-            icon: "history_edu",
-            colorVar: "--color-notes",
-            fields: [
-                defineField("Notes / Traditional Wisdom"),
-                defineField("Ayurvedic Energetics & Lipid Function (only for Oil)"),
-                defineField("Ayurvedic Energetics in plain English (Only for herbs)", "Ayurvedic Energetics"),
-                defineField("Basis(Leaf/Root) (only for herbs)", "Herb Basis: Root/Leaf/Stem")
-            ]
-        },
-        "References": {
-            id: "references",
-            icon: "menu_book",
-            colorVar: "--color-references",
-            fields: [
-                defineField("Cite (PubMed)"),
-                defineField("Project file references")
-            ]
-        }
-    };
+  // Configuration for the sections (icons)
+// NOTE: Keys must match the CSV headers exactly.
+var sectionDefinitions = {
+    "Nutrition": {
+        id: "nutrition",
+        icon: "fitness_center",
+        colorVar: "--color-nutrition",
+        fields: [
+            defineField("Macros (100 g)"),
+            defineField("Micros (% RDA)"),
+            defineField("Macros Health Effect"),
+            defineField("Fat Type (%)"),
+            defineField("Fatty Acid Breakdown (%) (only for Oil)"),
+            defineField("Fatty Acid Composition (Detailed %) (only for Diary)"),
+            defineField("Omega Profile (n-3/n-6 ratio) (only for Oil)", "Omega Profile (n-3/n-6 ratio)"),
+            defineField("CLA & SCFA Profile (mg/g or %) (only for Diary)", "Probiotics")
+        ]
+    },
+    "Bioactives": {
+        id: "bioactives",
+        icon: "bolt",
+        colorVar: "--color-bioactives",
+        fields: [
+            defineField("Key Bioactives (mg/g)"),
+            defineField("TPC (mg GAE/g)"),
+            defineField("Antioxidant Compounds (Functional Breakdown)"),
+            defineField("Probiotic / Bioactive Peptide Insight (only for Diary)", "Probiotics")
+        ]
+    },
+    "Usage & Safety": {
+        id: "usage",
+        icon: "health_and_safety",
+        colorVar: "--color-usage",
+        fields: [
+            defineField("Ideal Preparation"),
+            defineField("Ideal Dosage"),
+            defineField("Maximiser"),
+            // NEW: direct mapping to the Google Sheet column "Potential health Impacts"
+            defineField("Potential health Impacts", "Potential health Impacts"),
+            // Using the exact column name from the provided CSV link for reliability.
+            defineField("Potential health Impacts (wrong food pairing, consumption timings, over consumption) (P)", "Potential health Impacts (legacy)"),
+            defineField("Clinical Synergy / Key Combinations (Only for herbs)", "Ayurvedic Synergy")
+        ]
+    },
+    "Metabolic": {
+        id: "metabolic",
+        icon: "speed",
+        colorVar: "--color-metabolic",
+        fields: [
+            defineField("Insulin Impact (GL)"),
+            defineField("Harmonal effects (U)"),
+            defineField("Modern Clinical Insight")
+        ]
+    },
+    // Renamed Section
+    "Fermentation": { 
+        id: "tradition",
+        icon: "bubble_chart",
+        colorVar: "--color-tradition",
+        fields: [
+            defineField("Notes, Fermentation Effect", "Benefits of Fermentation and Methods"),
+            defineField("Fermentation Mechanism & Ayurvedic Parallel (only for Diary)")
+        ]
+    },
+    "Herbal Insights": {
+        id: "herbal",
+        icon: "eco",
+        colorVar: "--color-herbal",
+        fields: [
+            defineField("Active Phytochemical Class (only for Herbs)"),
+            defineField("Effect When Taken Before Food (Only for herbs)"),
+            defineField("Effect When Taken After Food (Only for herbs)"),
+            defineField("Timing Insight (Circadian / Metabolic Phase) (Only for herbs)", "Circadian / Metabolic Phase"),
+            defineField("Timing Insight (Neuroendocrine & Hormonal Synchrony) (only for herbs)", "Hormonal Synchrony")
+        ],
+        isConditional: true
+    },
+    "Notes/Wisdom": {
+        id: "notes",
+        icon: "history_edu",
+        colorVar: "--color-notes",
+        fields: [
+            defineField("Notes / Traditional Wisdom"),
+            defineField("Ayurvedic Energetics & Lipid Function (only for Oil)"),
+            defineField("Ayurvedic Energetics in plain English (Only for herbs)", "Ayurvedic Energetics"),
+            defineField("Basis(Leaf/Root) (only for herbs)", "Herb Basis: Root/Leaf/Stem")
+        ]
+    },
+    "References": {
+        id: "references",
+        icon: "menu_book",
+        colorVar: "--color-references",
+        fields: [
+            defineField("Cite (PubMed)"),
+            // RENAMED to match your new Google Sheet column
+            defineField("Book basis"),
+            // NEW: pulls from the sheet column "Basis(Leaf/Root) (only for herbs)"
+            defineField("Basis(Leaf/Root) (only for herbs)", "Basis(Leaf/Root/Leaves)")
+        ]
+    }
+};
+
 
     // Initialize elements
     var categorySelect, foodSelect, basisSelect, basisWrapper;
