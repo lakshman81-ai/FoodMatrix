@@ -208,6 +208,32 @@
             background-color: var(--primary-light);
         }
 
+        /* --- Search FAB --- */
+        #search-fab {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: var(--color-overview); /* Using a neutral color */
+            color: white;
+            border: none;
+            border-radius: 50%; /* Circular */
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #search-fab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            background-color: #374151; /* Darker gray */
+        }
+
         /* --- Selection Modal (Mobile) --- */
         #selection-modal {
             display: none; /* Handled by JS */
@@ -252,6 +278,55 @@
             font-size: 24px;
             color: var(--text-light);
             cursor: pointer;
+        }
+
+        /* --- Search Bar --- */
+        #search-bar {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow-lg);
+            z-index: 30; /* Above header */
+            padding: 10px;
+            box-sizing: border-box;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #search-bar.visible {
+            transform: translateY(0);
+        }
+
+        .search-bar-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        #search-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+        }
+        #search-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .search-close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 8px;
         }
 
 
@@ -551,6 +626,9 @@
             #selection-modal {
                 display: none !important;
             }
+            #search-fab {
+                display: none;
+            }
 
             /* Revert icon-row to centered wrapping on larger screens */
             .icon-row {
@@ -587,10 +665,45 @@
                 padding-bottom: 20px;
             }
         }
+        /* --- Search Results Styling --- */
+        .search-results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .search-result-item {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .search-result-item h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .search-result-item p {
+            margin: 4px 0;
+            color: var(--text-light);
+        }
+        .search-result-item strong {
+            color: var(--text-color);
+        }
 
     </style>
 </head>
 <body>
+
+<!-- Search Bar -->
+<div id="search-bar">
+    <div class="search-bar-content">
+        <input type="text" id="search-input" placeholder="Search for a keyword... (e.g. dopamine)">
+        <button class="search-close-btn material-icons" onclick="hideSearchBar()">close</button>
+    </div>
+</div>
 
 <!-- Header -->
 <header>
@@ -666,6 +779,11 @@
 <div class="selection-panel" id="selection-panel">
     <!-- Dropdowns will be inserted here by JS on desktop -->
 </div>
+
+<!-- Search FAB -->
+<button id="search-fab" onclick="showSearchBar()">
+    <i class="material-icons">search</i>
+</button>
 
 <!-- Mobile FAB -->
 <button id="mobile-fab" onclick="openSelectionModal()">
@@ -978,6 +1096,24 @@ var sectionDefinitions = {
         document.body.style.overflow = 'auto';
     }
 
+    // --- Search Bar Functions ---
+    function showSearchBar() {
+        var searchBar = document.getElementById('search-bar');
+        searchBar.style.display = 'block';
+        setTimeout(function() {
+            searchBar.classList.add('visible');
+            document.getElementById('search-input').focus();
+        }, 10); // Short delay to allow display property to take effect
+    }
+
+    function hideSearchBar() {
+        var searchBar = document.getElementById('search-bar');
+        searchBar.classList.remove('visible');
+        setTimeout(function() {
+            searchBar.style.display = 'none';
+        }, 300); // Match the transition duration
+    }
+
     // --- Data Fetching and Processing ---
 
     function fetchAndProcessData() {
@@ -1165,6 +1301,7 @@ var sectionDefinitions = {
         generateIconButtons();
         setupTabListeners();
         setupCameraListeners();
+        setupSearchListeners();
         loadingIndicator.style.display = 'none';
         // The selection panel display is now handled by CSS media queries and JS placement
     }
@@ -1312,6 +1449,20 @@ var sectionDefinitions = {
 
         // Camera file input
         cameraInput.addEventListener('change', handleImageUpload);
+    }
+
+    // --- Search Feature Listeners ---
+    function setupSearchListeners() {
+        document.getElementById('search-fab').addEventListener('click', showSearchBar);
+        document.querySelector('.search-close-btn').addEventListener('click', hideSearchBar);
+        document.getElementById('search-input').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                var searchTerm = event.target.value;
+                var results = searchFoods(searchTerm);
+                displaySearchResults(results);
+                hideSearchBar();
+            }
+        });
     }
 
 
@@ -1864,6 +2015,90 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
 
     function hideModal() {
         aiModal.style.display = 'none';
+    }
+
+    // --- Search Functionality ---
+    function searchFoods(keyword) {
+        var results = [];
+        if (!keyword || keyword.trim() === '') {
+            return results;
+        }
+
+        var lowerCaseKeyword = keyword.toLowerCase();
+
+        for (var category in foodData) {
+            for (var food in foodData[category]) {
+                var foodDetails = foodData[category][food];
+                var foundIn = [];
+
+                for (var field in foodDetails) {
+                    if (field === '_imageUrl') continue;
+
+                    var content = formatData(foodDetails[field], 'All');
+                    if (isValidContent(content) && content.toLowerCase().indexOf(lowerCaseKeyword) !== -1) {
+                        // Clean up field name for display
+                        var cleanField = field.replace(/\(only for .+\)/gi, '').replace(/\(.+\)/g, '').trim();
+                        if (foundIn.indexOf(cleanField) === -1) {
+                            foundIn.push(cleanField);
+                        }
+                    }
+                }
+
+                if (foundIn.length > 0) {
+                    results.push({
+                        foodName: food,
+                        category: category,
+                        foundIn: foundIn
+                    });
+                }
+            }
+        }
+        return results;
+    }
+
+    function displaySearchResults(results) {
+        mainContent.style.display = 'block';
+        imageContainer.style.display = 'none'; // Hide image container for search results
+
+        var htmlContent = '<h2>Search Results</h2>';
+
+        if (results.length === 0) {
+            htmlContent += '<p class="no-data">No matches found for your search.</p>';
+        } else {
+            htmlContent += '<div class="search-results-list">';
+            results.forEach(function(result) {
+                htmlContent += '<div class="search-result-item">';
+                htmlContent += '<h3><a href="#" class="search-result-link" data-category="' + result.category + '" data-food="' + result.foodName + '">' + result.foodName + '</a></h3>';
+                htmlContent += '<p><strong>Category:</strong> ' + result.category + '</p>';
+                htmlContent += '<p><em>Found in: ' + result.foundIn.join(', ') + '</em></p>';
+                htmlContent += '</div>';
+            });
+            htmlContent += '</div>';
+        }
+
+        mainContent.innerHTML = htmlContent;
+
+        // Add event listeners to the new links
+        document.querySelectorAll('.search-result-link').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                var category = this.getAttribute('data-category');
+                var food = this.getAttribute('data-food');
+
+                // Set the dropdowns
+                categorySelect.value = category;
+
+                // Trigger change to populate food dropdown
+                var event = new Event('change');
+                categorySelect.dispatchEvent(event);
+
+                foodSelect.value = food;
+                foodSelect.dispatchEvent(event); // This will trigger displayFoodDetails
+
+                // Hide search results and show main content view
+                // displayFoodDetails will handle showing the main content appropriately
+            });
+        });
     }
 
     // --- Camera Identification ---
