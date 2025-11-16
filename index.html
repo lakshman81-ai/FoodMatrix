@@ -11,25 +11,28 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <!-- TensorFlow.js and MobileNet for client-side image recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest/dist/mobilenet.min.js"></script>
     <style>
         /* Modern Color Palette and Variables (AI-Enhanced Design) */
         :root {
             /* UPDATED: A deeper, more modern Indigo/Blue */
             --primary-color: #4F46E5; /* Indigo 600 */
             --primary-light: #6366F1; /* Indigo 500 (for hovers) */
-            
+
             --bg-color: #F9FAFB; /* Softer background (Gray 50) */
             --text-color: #111827; /* Darker text (Gray 900) */
             --text-light: #6B7280;
             --card-bg: white;
             --input-bg: #F3F4F6; /* Slightly darker input bg (Gray 100) */
             --border-color: #E5E7EB;
-            
+
             /* UPDATED: Softer, layered shadows for depth */
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
-            
+
             /* Define colors for sections/icons - using a harmonious palette */
             --color-overview: #4B5563;
             --color-nutrition: #10B981; /* Emerald */
@@ -40,7 +43,7 @@
             --color-herbal: #14B8A6;    /* Teal */
             --color-notes: #64748B;
             --color-references: #94A3B8;
-            
+
             --current-active-color: var(--color-overview);
             --current-page-bg: color-mix(in srgb, var(--current-active-color) 8%, white);
         }
@@ -74,7 +77,7 @@
             align-items: center;
             gap: 12px;
         }
-        
+
         /* UPDATED: Class for the custom SVG icon */
         .header-app-icon {
             width: 32px; /* Slightly larger for better definition */
@@ -117,7 +120,7 @@
             transition: background-color 0.2s;
             border-radius: 50%;
         }
-        
+
         .camera-button:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
@@ -148,9 +151,9 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding-left: 8px;
-            background-color: var(--input-bg);  
+            background-color: var(--input-bg);
             transition: border-color 0.3s;
-            min-width: 0;  
+            min-width: 0;
         }
 
         .select-wrapper:focus-within {
@@ -167,7 +170,7 @@
             border: none;
             background: transparent;
             flex-grow: 1;
-            min-width: 0;  
+            min-width: 0;
             font-size: 14px;
             appearance: none;
             font-family: inherit;
@@ -203,6 +206,32 @@
             /* UPDATED: Subtle shadow on hover */
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
             background-color: var(--primary-light);
+        }
+
+        /* --- Search FAB --- */
+        #search-fab {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: var(--color-overview); /* Using a neutral color */
+            color: white;
+            border: none;
+            border-radius: 50%; /* Circular */
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #search-fab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            background-color: #374151; /* Darker gray */
         }
 
         /* --- Selection Modal (Mobile) --- */
@@ -251,6 +280,55 @@
             cursor: pointer;
         }
 
+        /* --- Search Bar --- */
+        #search-bar {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            box-shadow: var(--shadow-lg);
+            z-index: 30; /* Above header */
+            padding: 10px;
+            box-sizing: border-box;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #search-bar.visible {
+            transform: translateY(0);
+        }
+
+        .search-bar-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        #search-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+        }
+        #search-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .search-close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 8px;
+        }
+
 
         /* Main Container */
         .container {
@@ -265,7 +343,7 @@
             font-size: 1.75rem;
             font-weight: 700;
             /* Adjusted margin to account for new icon row styling */
-            margin-top: 25px;  
+            margin-top: 25px;
             margin-bottom: 20px;
             text-align: center;
             color: var(--text-color);
@@ -295,7 +373,7 @@
             align-items: center;
             justify-content: center;
             /* Increased size slightly for better tap target */
-            width: 55px;  
+            width: 55px;
             height: 55px;
             min-width: 55px;
             min-height: 55px;
@@ -338,7 +416,7 @@
         .tabs-header {
             display: flex;
             /* Use a slightly darker grey for the tab header */
-            background-color: #EAECEF;  
+            background-color: #EAECEF;
             border-radius: 12px 12px 0 0;
         }
 
@@ -347,7 +425,7 @@
             padding: 15px;
             text-align: center;
             cursor: pointer;
-            background-color: transparent;  
+            background-color: transparent;
             border: none;
             font-size: 1rem;
             font-weight: 600;
@@ -355,7 +433,7 @@
             transition: background-color 0.3s, color 0.3s;
             font-family: inherit;
         }
-        
+
         #tab-btn-overview.active { border-radius: 12px 0 0 0; }
         #tab-btn-dynamic.active { border-radius: 0 12px 0 0; }
 
@@ -431,14 +509,14 @@
             box-shadow: var(--shadow);
             overflow: hidden;
         }
-        
+
         #food-image {
             width: 100%;
-            max-height: 250px;  
+            max-height: 250px;
             object-fit: cover;
             display: block;
         }
-        
+
         #image-placeholder-text {
             padding: 50px;
             color: var(--text-light);
@@ -548,6 +626,9 @@
             #selection-modal {
                 display: none !important;
             }
+            #search-fab {
+                display: none;
+            }
 
             /* Revert icon-row to centered wrapping on larger screens */
             .icon-row {
@@ -584,10 +665,116 @@
                 padding-bottom: 20px;
             }
         }
+        /* --- Search Results Styling --- */
+        .search-results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
 
+        .search-result-item {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .search-result-item h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .search-result-item p {
+            margin: 4px 0;
+            color: var(--text-light);
+        }
+        .search-result-item strong {
+            color: var(--text-color);
+        }
+        .search-result-snippet {
+            background-color: #f8f9fa;
+            border-left: 3px solid var(--border-color);
+            padding: 8px 12px;
+            margin-top: 8px;
+            border-radius: 4px;
+        }
+
+        .search-result-snippet p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .search-result-snippet strong {
+            background-color: #ffd700; /* Gold */
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        /* --- Recipe Builder Styles --- */
+        .recipe-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .recipe-controls .select-wrapper {
+            flex-grow: 1;
+        }
+        #ingredient-list-container {
+            margin-bottom: 20px;
+        }
+        #suggested-ingredients-container {
+            margin-bottom: 20px;
+        }
+        #ingredient-list, #suggested-ingredients-list {
+            list-style-type: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .suggestion-chip {
+            background-color: #e0e7ff; /* Light Indigo */
+            color: var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .suggestion-chip:hover {
+            background-color: #c7d2fe; /* Darker Indigo */
+        }
+        #ingredient-list li {
+            background-color: var(--input-bg);
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .remove-ingredient-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            line-height: 1;
+        }
     </style>
 </head>
 <body>
+
+<!-- Search Bar -->
+<div id="search-bar">
+    <div class="search-bar-content">
+        <input type="text" id="search-input" placeholder="Search for a keyword... (e.g. dopamine)">
+        <button class="search-close-btn material-icons" onclick="hideSearchBar()">close</button>
+    </div>
+</div>
 
 <!-- Header -->
 <header>
@@ -598,22 +785,22 @@
                 /* Styles defined within SVG for portability */
                 .icon-fill { fill: white; }
                 /* Light indigo/lavender accent matching the theme */
-                .icon-accent { fill: #A5B4FC; } 
+                .icon-accent { fill: #A5B4FC; }
             </style>
-        
+
             <!-- Spoon/Bowl Base -->
             <path d="M20 55 C20 75 35 90 50 90 C65 90 80 75 80 55 L80 50 L20 50 Z" class="icon-fill"/>
-        
+
             <!-- Steam/Leaf -->
             <path d="M55 45 L 65 30 C 70 25 70 15 60 15 C 50 15 50 25 55 30 Z" class="icon-fill"/>
-            
+
             <!-- Saucer/Plate line -->
             <rect x="15" y="88" width="70" height="4" rx="2" class="icon-accent" opacity="0.5"/>
-        
+
         </svg>
         <span class="header-title">Food Matrix</span>
     </div>
-    
+
     <button class="camera-button" title="Identify Food" onclick="triggerCamera()">
         <i class="material-icons header-icon">photo_camera</i>
     </button>
@@ -664,6 +851,11 @@
     <!-- Dropdowns will be inserted here by JS on desktop -->
 </div>
 
+<!-- Search FAB -->
+<button id="search-fab" onclick="showSearchBar()">
+    <i class="material-icons">search</i>
+</button>
+
 <!-- Mobile FAB -->
 <button id="mobile-fab" onclick="openSelectionModal()">
     <i class="material-icons">filter_list</i>
@@ -684,7 +876,7 @@
 
 <!-- Main Content Area -->
 <div class="container" id="main-content" style="display: none;">
-    
+
     <!-- Icon Navigation -->
     <div class="icon-row" id="icon-row">
         <!-- Icons generated by JS -->
@@ -698,36 +890,65 @@
         <div class="tabs-header">
             <button class="tab-button active" id="tab-btn-overview" data-tab="tab-overview">Overview</button>
             <button class="tab-button" id="tab-btn-dynamic" data-tab="tab-dynamic">Details</button>
+            <button class="tab-button" id="tab-btn-recipe" data-tab="tab-recipe">Recipe</button>
         </div>
-        
+
         <!-- Overview Tab -->
         <div class="tab-content active" id="tab-overview">
             <div class="info-section">
                 <div class="info-title">Specific Benefits</div>
-                <div class="info-content" id="Specific Benefits (min 50 to max 100 words) (K)"></div>
+                <div class="info-content" id="Specific Benefits"></div>
             </div>
             <div class="info-section">
                 <div class="info-title">Health Tags</div>
                 <div class="info-content" id="Health Tags"></div>
             </div>
-            <!-- AI Summary section was here, now moved below -->
         </div>
-        
+
          <!-- Dynamic Details Tab -->
         <div class="tab-content" id="tab-dynamic">
             <!-- Dynamic content generated by JS -->
         </div>
-    </div>
-    
-    <!-- MOVED: AI Summary Card -->
-    <div class="summary-card" id="ai-summary-section">
-        <div class="info-title">✨ AI Summary</div>
-        <button id="ai-summary-btn" class="ai-button">Generate AI Summary</button>
-        <div class="info-content" id="ai-summary-content">
-            <p class="no-data">Click the button to generate an AI-powered summary of this food's benefits.</p>
+
+        <!-- Recipe Tab -->
+        <div class="tab-content" id="tab-recipe">
+            <div class="info-section">
+                <div class="info-title">Build Your Recipe</div>
+                <div id="recipe-builder">
+                    <div class="recipe-controls">
+                        <div class="select-wrapper">
+                            <i class="material-icons">category</i>
+                            <select id="recipe-category-select" aria-label="Select Category for Recipe">
+                                <option value="">Select Category...</option>
+                            </select>
+                        </div>
+                        <div class="select-wrapper">
+                            <i class="material-icons">restaurant</i>
+                            <select id="recipe-food-select" aria-label="Select Food for Recipe" disabled>
+                                <option value="">Select Food...</option>
+                            </select>
+                        </div>
+                        <button id="add-ingredient-btn" class="ai-button" disabled>Add</button>
+                    </div>
+                    <div id="ingredient-list-container">
+                        <p><strong>Selected Ingredients:</strong></p>
+                        <ul id="ingredient-list"></ul>
+                    </div>
+                    <div id="suggested-ingredients-container" style="display: none;">
+                        <p><strong>Suggestions (Maximisers):</strong></p>
+                        <div id="suggested-ingredients-list"></div>
+                    </div>
+                    <button id="generate-recipe-btn" class="ai-button" disabled>Generate Recipe</button>
+                </div>
+            </div>
+            <div class="info-section" id="recipe-output-container" style="display: none;">
+                <div class="info-title">Generated Recipe</div>
+                <div class="info-content" id="recipe-output"></div>
+            </div>
         </div>
     </div>
-    
+
+
     <!-- Image Container -->
     <div id="image-container" style="display: none;">
         <img id="food-image" src="" alt="Food Image">
@@ -771,7 +992,7 @@
         'use strict';
         if ( ! ((typeof func === 'function') && this) )
             throw new TypeError();
-        
+
         var len = this.length >>> 0,
             res = new Array(len),
             t = this, c = 0, i = -1;
@@ -794,7 +1015,7 @@
             }
           }
         }
-        
+
         res.length = c;
         return res;
       };
@@ -802,17 +1023,12 @@
 
 
     // Using 'var' for ES5 compatibility
-    var foodData = {}; 
+    var foodData = {};
+    var selectedIngredients = []; // <-- ADD THIS LINE
 
     // Google Sheet URL
     var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQRQTEztCwC34GwFO1SN4evMaaZc2LxSMgI9Z8rgNh6VdiRPzRgswBFuXFWUxFd-g/pub?output=csv';
 
-    // --- Gemini API Configuration ---
-    // IMPORTANT: Replace "" with your actual Gemini API Key for AI features to work.
-    var API_KEY = ""; // <-- **** INSERT YOUR GEMINI API KEY HERE ****
-    var GEMINI_TEXT_MODEL = "gemini-1.5-flash-latest";
-    var GEMINI_VISION_MODEL = "gemini-1.5-flash-latest";
-    // --------------------------------
 
     // Define markers globally for use in extraction logic.
     // Includes variations like "Research:" or "Research basis" to maximize compatibility and fulfill requirements.
@@ -836,8 +1052,8 @@ var sectionDefinitions = {
         icon: "fitness_center",
         colorVar: "--color-nutrition",
         fields: [
-            defineField("Macros (100 g)"),
-            defineField("Micros (% RDA)"),
+            defineField("Macros"),
+            defineField("Micros"),
             defineField("Macros Health Effect"),
             defineField("Fat Type (%)"),
             defineField("Fatty Acid Breakdown (%) (only for Oil)"),
@@ -851,8 +1067,8 @@ var sectionDefinitions = {
         icon: "bolt",
         colorVar: "--color-bioactives",
         fields: [
-            defineField("Key Bioactives (mg/g)"),
-            defineField("TPC (mg GAE/g)"),
+            defineField("Key Bioactives"),
+            defineField("TPC"),
             defineField("Antioxidant Compounds (Functional Breakdown)"),
             defineField("Probiotic / Bioactive Peptide Insight (only for Diary)", "Probiotics")
         ]
@@ -865,10 +1081,7 @@ var sectionDefinitions = {
             defineField("Ideal Preparation"),
             defineField("Ideal Dosage"),
             defineField("Maximiser"),
-            // NEW: direct mapping to the Google Sheet column "Potential health Impacts"
-            defineField("Potential health Impacts", "Potential health Impacts"),
-            // Using the exact column name from the provided CSV link for reliability.
-            defineField("Potential health Impacts (wrong food pairing, consumption timings, over consumption) (P)", "Potential health Impacts (legacy)"),
+            defineField("Potential health Impacts"),
             defineField("Clinical Synergy / Key Combinations (Only for herbs)", "Ayurvedic Synergy")
         ]
     },
@@ -878,17 +1091,17 @@ var sectionDefinitions = {
         colorVar: "--color-metabolic",
         fields: [
             defineField("Insulin Impact (GL)"),
-            defineField("Harmonal effects (U)"),
+            defineField("Harmonal effects"),
             defineField("Modern Clinical Insight")
         ]
     },
     // Renamed Section
-    "Fermentation": { 
+    "Fermentation": {
         id: "tradition",
         icon: "bubble_chart",
         colorVar: "--color-tradition",
         fields: [
-            defineField("Notes, Fermentation Effect", "Benefits of Fermentation and Methods"),
+            defineField("Notes", "Benefits of Fermentation and Methods"),
             defineField("Fermentation Mechanism & Ayurvedic Parallel (only for Diary)")
         ]
     },
@@ -913,7 +1126,7 @@ var sectionDefinitions = {
             defineField("Notes / Traditional Wisdom"),
             defineField("Ayurvedic Energetics & Lipid Function (only for Oil)"),
             defineField("Ayurvedic Energetics in plain English (Only for herbs)", "Ayurvedic Energetics"),
-            defineField("Basis(Leaf/Root) (only for herbs)", "Herb Basis: Root/Leaf/Stem")
+            defineField("Basis (Leaf/Root)", "Herb Basis: Root/Leaf/Stem")
         ]
     },
     "References": {
@@ -921,11 +1134,11 @@ var sectionDefinitions = {
         icon: "menu_book",
         colorVar: "--color-references",
         fields: [
-            defineField("Cite (PubMed)"),
+            defineField("Cite"),
             // RENAMED to match your new Google Sheet column
             defineField("Book basis"),
             // NEW: pulls from the sheet column "Basis(Leaf/Root) (only for herbs)"
-            defineField("Basis(Leaf/Root) (only for herbs)", "Basis(Leaf/Root/Leaves)")
+            defineField("Basis (Leaf/Root)", "Basis(Leaf/Root/Leaves)")
         ]
     }
 };
@@ -951,9 +1164,6 @@ var sectionDefinitions = {
     var modalSpinner = document.getElementById('modal-spinner');
     var modalCloseBtn = document.getElementById('modal-close-btn');
     var cameraInput = document.getElementById('camera-input');
-    var aiSummaryBtn = document.getElementById('ai-summary-btn');
-    var aiSummaryContent = document.getElementById('ai-summary-content');
-    var aiSummarySection = document.getElementById('ai-summary-section');
     var cameraButtonElement = document.querySelector('.camera-button');
 
     // --- Initialization and UI Setup ---
@@ -991,6 +1201,24 @@ var sectionDefinitions = {
     function closeSelectionModal() {
         selectionModal.style.display = 'none';
         document.body.style.overflow = 'auto';
+    }
+
+    // --- Search Bar Functions ---
+    function showSearchBar() {
+        var searchBar = document.getElementById('search-bar');
+        searchBar.style.display = 'block';
+        setTimeout(function() {
+            searchBar.classList.add('visible');
+            document.getElementById('search-input').focus();
+        }, 10); // Short delay to allow display property to take effect
+    }
+
+    function hideSearchBar() {
+        var searchBar = document.getElementById('search-bar');
+        searchBar.classList.remove('visible');
+        setTimeout(function() {
+            searchBar.style.display = 'none';
+        }, 300); // Match the transition duration
     }
 
     // --- Data Fetching and Processing ---
@@ -1041,9 +1269,9 @@ var sectionDefinitions = {
         // 1. Attempt to find standardized keys
         CATEGORY_KEY = headers.find(function(h) { return h.trim().toLowerCase() === 'category'; });
         FOOD_KEY = headers.find(function(h) { return h.trim().toLowerCase() === 'food'; });
-        BASIS_KEY = headers.find(function(h) { 
+        BASIS_KEY = headers.find(function(h) {
             var lowerH = h.trim().toLowerCase();
-            return lowerH === 'basis'; 
+            return lowerH === 'basis';
         });
 
 
@@ -1053,7 +1281,7 @@ var sectionDefinitions = {
         } else {
             // 2. Fallback logic
             console.warn("Standard 'Category'/'Food' headers not found. Attempting fallback.");
-            
+
              // Check if structure is Category, Sl No., Food (as in the provided link)
             if (headers.length >= 3 && headers[1].toLowerCase() === 'sl no.') {
                 CATEGORY_KEY = headers[0];
@@ -1078,13 +1306,13 @@ var sectionDefinitions = {
         }
 
         // If the structure is flattened (no 'Basis' column), assign the data to "All".
-        var DEFAULT_BASIS = 'All'; 
+        var DEFAULT_BASIS = 'All';
 
         // --- Process Data Rows ---
         data.forEach(function(row) {
             var categoryRaw = row[CATEGORY_KEY];
             var foodRaw = row[FOOD_KEY];
-            
+
             var basisRaw;
 
             if (isFlattened) {
@@ -1098,7 +1326,7 @@ var sectionDefinitions = {
             var category = categoryRaw ? categoryRaw.trim() : null;
             var food = foodRaw ? foodRaw.trim() : null;
             var basis = basisRaw ? basisRaw.trim() : null;
-            
+
             // Standardize basis names if they are provided (e.g. R -> Research), unless it is "All"
             if (basis && basis !== 'All') {
                 if (basis.toUpperCase() === 'R' || basis.toLowerCase() === 'research') basis = 'Research';
@@ -1115,7 +1343,7 @@ var sectionDefinitions = {
                 structuredData[category][food] = {};
             }
 
-            // Note: Removed the optimization check for flattened structure here to ensure all rows are processed, 
+            // Note: Removed the optimization check for flattened structure here to ensure all rows are processed,
             // allowing data from multiple rows for the same food/basis to be appended if necessary.
 
             Object.keys(row).forEach(function(key) {
@@ -1125,7 +1353,7 @@ var sectionDefinitions = {
                 if (fieldName === CATEGORY_KEY || fieldName === FOOD_KEY || fieldName.toLowerCase() === 'sl no.' || !fieldName) {
                     return;
                 }
-                
+
                 // Skip the basis key if it exists
                 if (BASIS_KEY && fieldName === BASIS_KEY) {
                     return;
@@ -1135,13 +1363,13 @@ var sectionDefinitions = {
                 var value = valueRaw ? valueRaw.trim() : null;
 
                 if (value) {
-                    
+
                     if (fieldName.toLowerCase() === 'image') {
                         if (!structuredData[category][food]['_imageUrl']) {
                             structuredData[category][food]['_imageUrl'] = value;
                         }
                     } else {
-                        // Maintain the nested structure { Field: { Basis: Value } } 
+                        // Maintain the nested structure { Field: { Basis: Value } }
                         if (!structuredData[category][food][fieldName]) {
                             structuredData[category][food][fieldName] = {};
                         }
@@ -1169,7 +1397,7 @@ var sectionDefinitions = {
             }
             return;
         }
-        
+
         // Setup the dropdown elements and their placement
         initializeDropdownElements();
         manageDropdownPlacement();
@@ -1179,7 +1407,9 @@ var sectionDefinitions = {
         populateCategories();
         generateIconButtons();
         setupTabListeners();
-        setupAIListeners(); 
+        setupCameraListeners();
+        setupSearchListeners();
+        setupRecipeBuilderListeners(); // <-- ADD THIS LINE
         loadingIndicator.style.display = 'none';
         // The selection panel display is now handled by CSS media queries and JS placement
     }
@@ -1211,14 +1441,14 @@ var sectionDefinitions = {
 
                 // Generate Icon ONLY
                 button.innerHTML = '<i class="material-icons">' + config.icon + '</i>';
-                
+
                 // ES5 compatibility closure for onclick event
                 button.onclick = (function(id, colorVar, name) {
                     return function() {
                         selectSection(id, colorVar, name);
                     };
                 })(config.id, config.colorVar, sectionName);
-                
+
                 iconRow.appendChild(button);
             }
         }
@@ -1230,7 +1460,7 @@ var sectionDefinitions = {
     function setupEventListeners() {
         categorySelect.addEventListener('change', function() {
             var category = this.value;
-            foodSelect.innerHTML = '<option value="">Select Food...</option>'; 
+            foodSelect.innerHTML = '<option value="">Select Food...</option>';
             foodSelect.value = "";
             mainContent.style.display = 'none';
             imageContainer.style.display = 'none';
@@ -1253,15 +1483,15 @@ var sectionDefinitions = {
 
         // When food changes, update the display
         foodSelect.addEventListener('change', displayFoodDetails);
-        
+
         // When basis changes, re-render the current food details
         basisSelect.addEventListener('change', function() {
             // Ensure a food is actually selected before trying to refresh
             if (foodSelect.value && categorySelect.value) {
-                
+
                 // 1. Update Overview Tab content (This always runs)
                 populateOverview();
-                
+
                 // 2. Update Icon Visibility based on new basis
                 updateIconVisibility();
 
@@ -1291,19 +1521,19 @@ var sectionDefinitions = {
                          var sectionId = firstVisibleIcon.getAttribute('data-section');
                          var colorVar = firstVisibleIcon.getAttribute('data-color-var');
                          var sectionName = firstVisibleIcon.getAttribute('title');
-                         
-                         // Force update the section content. 
+
+                         // Force update the section content.
                          selectSection(sectionId, colorVar, sectionName, true);
-                         
+
                          // If the Details tab is currently visible, we must ensure the colors update correctly for the new section immediately.
                           if (document.getElementById('tab-btn-dynamic').classList.contains('active')) {
                              updateColors(colorVar);
                           }
-                             
+
                      } else {
                          // Handle case where no icons are visible for this basis
                          dynamicTabContent.innerHTML = '<p class="no-data">No detailed data available for this basis.</p>';
-                         
+
                           // Reset color if on details tab
                           if (document.getElementById('tab-btn-dynamic').classList.contains('active')) {
                               updateColors('--color-overview');
@@ -1320,31 +1550,27 @@ var sectionDefinitions = {
     }
 
 
-    // --- AI Feature Listeners ---
-    function setupAIListeners() {
+    // --- Camera Feature Listeners ---
+    function setupCameraListeners() {
         // Modal close button listener is always needed
         modalCloseBtn.addEventListener('click', hideModal);
 
-        // Check if API Key is provided before enabling AI features
-        if (!API_KEY || API_KEY.trim() === "") {
-            console.warn("Gemini API Key is missing. AI features (Camera, Summary, Recipe) will be disabled.");
-            // Disable buttons if key is missing
-            if (cameraButtonElement) {
-                cameraButtonElement.disabled = true;
-                cameraButtonElement.title = "AI Camera Disabled (Missing API Key)";
-            }
-            
-            // Hide the AI Summary section entirely if disabled
-            aiSummarySection.style.display = 'none';
-
-            return; // Exit setup if no key
-        }
-
         // Camera file input
         cameraInput.addEventListener('change', handleImageUpload);
-        
-        // AI Summary button
-        aiSummaryBtn.addEventListener('click', getAISummary);
+    }
+
+    // --- Search Feature Listeners ---
+    function setupSearchListeners() {
+        document.getElementById('search-fab').addEventListener('click', showSearchBar);
+        document.querySelector('.search-close-btn').addEventListener('click', hideSearchBar);
+        document.getElementById('search-input').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                var searchTerm = event.target.value;
+                var results = searchFoods(searchTerm);
+                displaySearchResults(results);
+                hideSearchBar();
+            }
+        });
     }
 
 
@@ -1369,7 +1595,7 @@ var sectionDefinitions = {
 
             // 1. Populate Overview Tab
             populateOverview();
-            
+
             // 2. Update Image Display
             updateImageDisplay(data);
 
@@ -1385,7 +1611,7 @@ var sectionDefinitions = {
                     break;
                 }
             }
-            
+
             if (firstVisibleIcon) {
                 var sectionId = firstVisibleIcon.getAttribute('data-section');
                 var colorVar = firstVisibleIcon.getAttribute('data-color-var');
@@ -1404,12 +1630,6 @@ var sectionDefinitions = {
             openTab('tab-overview');
             mainContent.style.display = 'block';
 
-            // 6. Reset AI Summary content when food changes
-            if (API_KEY && API_KEY.trim() !== "") {
-                aiSummaryContent.innerHTML = '<p class="no-data">Click the button to generate an AI-powered summary of this food\'s benefits.</p>';
-                aiSummaryBtn.disabled = false;
-            }
-
         } else if (foodName === "") {
             mainContent.style.display = 'none';
             imageContainer.style.display = 'none';
@@ -1426,7 +1646,7 @@ var sectionDefinitions = {
         for (var i = 0; i < options.length; i++) {
             options[i].disabled = false;
         }
-        
+
         // Ensure a default selection if none is set (e.g., initial load)
         if (basisSelect.value === "") {
             basisSelect.value = 'All';
@@ -1436,14 +1656,14 @@ var sectionDefinitions = {
 
     function updateImageDisplay(data) {
         var imageUrl = data['_imageUrl'];
-        
+
         foodImage.style.display = 'none';
         imagePlaceholderText.style.display = 'none';
         imageContainer.style.display = 'none';
 
         if (imageUrl && isValidContent(imageUrl)) {
             foodImage.src = imageUrl;
-            
+
             foodImage.onload = function() {
                  foodImage.style.display = 'block';
                  imageContainer.style.display = 'block';
@@ -1454,7 +1674,7 @@ var sectionDefinitions = {
                 imagePlaceholderText.style.display = 'block';
                 imageContainer.style.display = 'block';
             };
-            
+
         } else {
             // Check if there is other data besides the image URL
             var hasContentData = false;
@@ -1481,7 +1701,7 @@ var sectionDefinitions = {
              if (Object.prototype.hasOwnProperty.call(sectionDefinitions, sectionName)) {
                  var config = sectionDefinitions[sectionName];
                  var iconButton = document.getElementById('icon-btn-' + config.id);
-                 
+
                  if (iconButton) {
                      // Check if the section has data for the CURRENTLY SELECTED basis
                      if (checkIfSectionHasData(config.id)) {
@@ -1500,14 +1720,14 @@ var sectionDefinitions = {
         var foodName = foodSelect.value;
         // Get the currently selected basis from the dropdown
         var basis = basisSelect.value;
-        
+
         // Safety check
         if (!category || !foodName || !foodData[category] || !foodData[category][foodName]) return;
 
         var data = foodData[category][foodName];
 
         // These IDs must match the HTML IDs, which correspond to the CSV headers for the overview fields.
-        populateField("Specific Benefits (min 50 to max 100 words) (K)", data, basis);
+        populateField("Specific Benefits", data, basis);
         populateField("Health Tags", data, basis);
     }
 
@@ -1522,13 +1742,13 @@ var sectionDefinitions = {
             openTab('tab-dynamic');
             return;
         }
-        
+
         // Update active state
         // We ensure any previously active icon is removed first.
         if (currentActive) {
              currentActive.classList.remove('active');
         }
-        
+
         var selectedButton = document.getElementById('icon-btn-' + sectionId);
         if (selectedButton) {
              selectedButton.classList.add('active');
@@ -1544,7 +1764,7 @@ var sectionDefinitions = {
         if (!forceUpdate) {
             // If triggered by user click, switch to the dynamic tab
             openTab('tab-dynamic');
-        } 
+        }
     }
 
     // Checks if a specific section has any data for the selected basis
@@ -1570,8 +1790,8 @@ var sectionDefinitions = {
 
         for (var i = 0; i < config.fields.length; i++) {
             // Access the key property of the field object
-            var fieldKey = config.fields[i].key; 
-            
+            var fieldKey = config.fields[i].key;
+
             // formatData handles the logic of checking the specific basis
             var content = formatData(data[fieldKey], basis);
             if (isValidContent(content)) {
@@ -1642,31 +1862,8 @@ var sectionDefinitions = {
             }
         });
 
-        // --- Add AI Recipe Button to "Usage" section ---
-        // Only add if the API key is present
-        if (sectionId === 'usage' && API_KEY && API_KEY.trim() !== "") {
-
-            htmlContent += '<div class="info-section">' +
-                                 '<div class="info-title">✨ Recipe Idea</div>' +
-                                 '<button id="ai-recipe-btn" class="ai-button">Get Recipe Idea</button>' +
-                                 '<div class="info-content" id="ai-recipe-content">' +
-                                     '<p class="no-data">Click the button for a healthy recipe idea.</p>' +
-                                 '</div>' +
-                             '</div>';
-            hasContent = true;
-        }
-        // ------------------------------------------------
-
         if (hasContent) {
             dynamicTabContent.innerHTML = htmlContent;
-
-            // Add listener for the recipe button *after* it's added to the DOM
-            if (sectionId === 'usage' && API_KEY && API_KEY.trim() !== "") {
-                var recipeBtn = document.getElementById('ai-recipe-btn');
-                if (recipeBtn) {
-                    recipeBtn.addEventListener('click', getRecipeIdea);
-                }
-            }
         } else {
              dynamicTabContent.innerHTML = '<p class="no-data">No data available for this section under the selected basis.</p>';
         }
@@ -1691,7 +1888,7 @@ var sectionDefinitions = {
 
         // 1. Find the start index for the selected basis using the globally defined BASIS_MARKERS
         var selectedMarkerConfig = null;
-        
+
         // ES5 compatible loop
         for (var m = 0; m < BASIS_MARKERS.length; m++) {
             if (BASIS_MARKERS[m].basis === selectedBasis) {
@@ -1699,7 +1896,7 @@ var sectionDefinitions = {
                 break;
             }
         }
-        
+
         if (selectedMarkerConfig) {
             for (var i = 0; i < selectedMarkerConfig.patterns.length; i++) {
                 var index = lowerText.indexOf(selectedMarkerConfig.patterns[i]);
@@ -1714,12 +1911,12 @@ var sectionDefinitions = {
 
         // If the specific basis marker is not found in the text, we assume the data is not present for this basis in this block.
         if (startIndex === -1) {
-            return null; 
+            return null;
         }
 
         // 2. Find the end index (the start of the next basis: Book, Gen, or Research)
         var potentialEndIndices = [];
-        
+
         // Iterate through all markers OTHER than the selected one to find the next section start.
         BASIS_MARKERS.forEach(function(marker) {
             if (marker.basis !== selectedBasis) {
@@ -1821,13 +2018,13 @@ var sectionDefinitions = {
                     }
                 }
             }
-            
+
             // 3. If nothing is found after all checks, return null.
             return null;
         }
 
         // Scenario 2: User selected "All"
-        
+
         // Identify keys that have valid content (using the ES5 compatible filter polyfill)
         var validKeys = Object.keys(data).filter(function(k) { return isValidContent(data[k]); });
 
@@ -1876,7 +2073,7 @@ var sectionDefinitions = {
         if (!text) return text;
         // Link PMC IDs
         var processedText = text.replace(/(PMC\d+)/g, '<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/$1/" target="_blank">$1</a>');
-        
+
         // Link PMID IDs
         processedText = processedText.replace(/(PMID\s*[:]?\s*)(\d+)/gi, function(match, prefix, id) {
              var label = 'PMID:' + id;
@@ -1915,8 +2112,8 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
 
         return html;
     }
-    
-    // --- AI Modal Functions ---
+
+    // --- Modal Functions ---
     function showModal(message, showSpinner, showCloseBtn) {
         modalMessage.textContent = message;
         modalSpinner.style.display = showSpinner ? 'block' : 'none';
@@ -1928,164 +2125,174 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
         aiModal.style.display = 'none';
     }
 
-    // --- Gemini API Call Function ---
-
-    /**
-     * Generic function to call the Gemini API with exponential backoff.
-     * Note: This relies on Fetch API and Promises, which may require polyfills for true ES5 compatibility (e.g., Internet Explorer).
-     */
-    function callGeminiAPI(apiUrl, payload, retries, delay) {
-        retries = retries === undefined ? 3 : retries;
-        delay = delay === undefined ? 1000 : delay;
-
-        // Basic check for API Key
-        if (!API_KEY || API_KEY.trim() === "") {
-            // Ensure Promise exists (for very old browsers, a polyfill might be needed)
-            if (typeof Promise === 'undefined') {
-                console.error("Promises not supported in this browser.");
-                return;
-            }
-            return Promise.reject(new Error("API Key is missing."));
+    // --- Search Functionality ---
+    function searchFoods(keyword) {
+        var results = [];
+        if (!keyword || keyword.trim() === '') {
+            return results;
         }
 
-        // Ensure Fetch exists (for very old browsers, a polyfill might be needed)
-        if (typeof fetch === 'undefined') {
-            console.error("Fetch API not supported in this browser.");
-            return;
-        }
+        var lowerCaseKeyword = keyword.toLowerCase();
 
-        return fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(function(response) {
-            if (!response.ok) {
-                // Try to get more details from the response body
-                return response.text().then(function(text) {
-                    throw new Error('HTTP error! status: ' + response.status + ', Body: ' + text);
-                });
-            }
-            return response.json();
-        })
-        .catch(function(error) {
-            console.warn('API call failed. Retries left: ' + retries, error.message);
-            // Check for specific errors like invalid API key
-            if (error.message.indexOf("400") !== -1 || error.message.indexOf("403") !== -1) {
-                throw new Error('API call failed: Invalid request or API Key.');
-            }
+        for (var category in foodData) {
+            for (var food in foodData[category]) {
+                var foodDetails = foodData[category][food];
+                var matches = [];
 
-            if (retries > 0) {
-                return new Promise(function(resolve) {
-                    setTimeout(resolve, delay);
-                }).then(function() {
-                    return callGeminiAPI(apiUrl, payload, retries - 1, delay * 2);
-                });
-            } else {
-                throw new Error('API call failed after all retries: ' + error.message);
-            }
-        });
-    }
+                for (var field in foodDetails) {
+                    if (field === '_imageUrl') continue;
 
-    // --- Gemini Feature: AI Summary ---
+                    var content = formatData(foodDetails[field], 'All');
+                    if (isValidContent(content) && content.toLowerCase().indexOf(lowerCaseKeyword) !== -1) {
+                        var cleanField = field.replace(/\(only for .+\)/gi, '').replace(/\(.+\)/g, '').trim();
+                        var snippet = createSnippet(content, keyword);
+                        if (snippet) {
+                            matches.push({
+                                field: cleanField,
+                                snippet: snippet
+                            });
+                        }
+                    }
+                }
 
-    function getAISummary() {
-        var category = categorySelect.value;
-        var foodName = foodSelect.value;
-        if (!category || !foodName) return;
-
-        var data = foodData[category][foodName];
-        if (!data) return;
-
-        aiSummaryBtn.disabled = true;
-        aiSummaryContent.innerHTML = '<div class="spinner" style="margin: 0;"></div><p style="margin-top: 10px;">Generating summary...</p>';
-
-        var systemPrompt = "You are a friendly and knowledgeable nutritionist. Based on the following raw data about a food, provide a concise, easy-to-read summary (about 2-3 paragraphs) for a layperson. Highlight its main benefits, key nutritional components, and any important usage or safety considerations. Do not just list the data; synthesize it into a coherent summary.";
-        
-        // Simplify data for the prompt, sending all available basis data
-        var promptData = {};
-        for (var key in data) {
-            if (Object.prototype.hasOwnProperty.call(data, key) && key !== '_imageUrl' && data[key]) {
-                // Use formatData with 'All' to combine all bases for the AI context
-                var combinedValue = formatData(data[key], 'All');
-                if (isValidContent(combinedValue)) {
-                    // We send the raw key (CSV column name) to the AI.
-                    promptData[key] = combinedValue;
+                if (matches.length > 0) {
+                    results.push({
+                        foodName: food,
+                        category: category,
+                        matches: matches
+                    });
                 }
             }
         }
-        var userQuery = "Here is the data for " + foodName + ": \n" + JSON.stringify(promptData) + "\n\n Please provide the summary.";
-        
-        var payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: {
-                parts: [{ text: systemPrompt }]
-            }
-        };
-
-        var apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_TEXT_MODEL + ':generateContent?key=' + API_KEY;
-
-        callGeminiAPI(apiUrl, payload)
-            .then(function(result) {
-                var text = result.candidates[0].content.parts[0].text;
-                // Basic Markdown/Text to HTML conversion
-                aiSummaryContent.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                aiSummaryBtn.disabled = false;
-            })
-            .catch(function(error) {
-                console.error("AI Summary Error:", error);
-                aiSummaryContent.innerHTML = '<p class="no-data" style="color: red;">Error generating summary. ' + error.message + '</p>';
-                aiSummaryBtn.disabled = false;
-            });
+        return results;
     }
 
-    // --- Gemini Feature: Recipe Idea ---
+    function createSnippet(text, keyword, contextLength) {
+        contextLength = contextLength || 80;
+        var lowerText = text.toLowerCase();
+        var lowerKeyword = keyword.toLowerCase();
+        var index = lowerText.indexOf(lowerKeyword);
+        if (index === -1) return null;
 
-    function getRecipeIdea() {
-        var foodName = foodSelect.value;
-        if (!foodName) return;
+        var start = Math.max(0, index - contextLength);
+        var end = Math.min(text.length, index + keyword.length + contextLength);
 
-        var recipeBtn = document.getElementById('ai-recipe-btn');
-        var recipeContent = document.getElementById('ai-recipe-content');
-        
-        recipeBtn.disabled = true;
-        recipeContent.innerHTML = '<div class="spinner" style="margin: 0;"></div><p style="margin-top: 10px;">Generating recipe...</p>';
+        var prefix = start > 0 ? "..." : "";
+        var suffix = end < text.length ? "..." : "";
 
-        var systemPrompt = "You are a creative and healthy-living chef. You provide simple, healthy recipe ideas in 1-2 paragraphs.";
-        var userQuery = "Give me a simple, healthy recipe idea that features " + foodName + ".";
+        var snippet = text.substring(start, end);
 
-        var payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: {
-                parts: [{ text: systemPrompt }]
-            }
-        };
+        var escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        var highlightedSnippet = snippet.replace(new RegExp(escapedKeyword, 'gi'), '<strong>$&</strong>');
 
-        var apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_TEXT_MODEL + ':generateContent?key=' + API_KEY;
-
-        callGeminiAPI(apiUrl, payload)
-            .then(function(result) {
-                var text = result.candidates[0].content.parts[0].text;
-                recipeContent.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                recipeBtn.disabled = false;
-            })
-            .catch(function(error) {
-                console.error("AI Recipe Error:", error);
-                recipeContent.innerHTML = '<p class="no-data" style="color: red;">Error generating recipe. ' + error.message + '</p>';
-                recipeBtn.disabled = false;
-            });
+        return prefix + highlightedSnippet + suffix;
     }
 
-    // --- Gemini Feature: Camera Identification ---
+    function displaySearchResults(results) {
+        mainContent.style.display = 'block';
+        imageContainer.style.display = 'none'; // Hide image container for search results
+
+        var htmlContent = '<h2>Search Results</h2>';
+
+        if (results.length === 0) {
+            htmlContent += '<p class="no-data">No matches found for your search.</p>';
+        } else {
+            htmlContent += '<div class="search-results-list">';
+            results.forEach(function(result) {
+                htmlContent += '<div class="search-result-item">';
+                htmlContent += '<h3><a href="#" class="search-result-link" data-category="' + result.category + '" data-food="' + result.foodName + '">' + result.foodName + '</a></h3>';
+                htmlContent += '<p><strong>Category:</strong> ' + result.category + '</p>';
+                result.matches.forEach(function(match) {
+                    htmlContent += '<div class="search-result-snippet">';
+                    htmlContent += '<p><em>' + match.field + ':</em> ' + match.snippet + '</p>';
+                    htmlContent += '</div>';
+                });
+                htmlContent += '</div>';
+            });
+            htmlContent += '</div>';
+        }
+
+        mainContent.innerHTML = htmlContent;
+
+        // Add event listeners to the new links
+        document.querySelectorAll('.search-result-link').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                var category = this.getAttribute('data-category');
+                var food = this.getAttribute('data-food');
+
+                // Restore the main content structure before populating it
+                restoreMainContent();
+
+                // Set the dropdowns
+                categorySelect.value = category;
+
+                // Trigger change to populate food dropdown
+                var event = new Event('change');
+                categorySelect.dispatchEvent(event);
+
+                foodSelect.value = food;
+                foodSelect.dispatchEvent(event); // This will trigger displayFoodDetails
+            });
+        });
+    }
+
+    function restoreMainContent() {
+        mainContent.innerHTML = `
+            <!-- Icon Navigation -->
+            <div class="icon-row" id="icon-row">
+                <!-- Icons generated by JS -->
+            </div>
+
+            <!-- Food Title -->
+            <h2 id="food-title"></h2>
+
+            <!-- Tabbed Content -->
+            <div class="tabs-container" id="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" id="tab-btn-overview" data-tab="tab-overview">Overview</button>
+                    <button class="tab-button" id="tab-btn-dynamic" data-tab="tab-dynamic">Details</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-content active" id="tab-overview">
+                    <div class="info-section">
+                        <div class="info-title">Specific Benefits</div>
+                        <div class="info-content" id="Specific Benefits"></div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-title">Health Tags</div>
+                        <div class="info-content" id="Health Tags"></div>
+                    </div>
+                </div>
+
+                 <!-- Dynamic Details Tab -->
+                <div class="tab-content" id="tab-dynamic">
+                    <!-- Dynamic content generated by JS -->
+                </div>
+            </div>
+
+
+            <!-- Image Container -->
+            <div id="image-container" style="display: none;">
+                <img id="food-image" src="" alt="Food Image">
+                <div id="image-placeholder-text" style="display: none;">Image not available</div>
+            </div>
+        `;
+        // Re-initialize dynamic elements
+        dynamicTabContent = document.getElementById('tab-dynamic');
+        dynamicTabButton = document.getElementById('tab-btn-dynamic');
+        foodImage = document.getElementById('food-image');
+        imageContainer = document.getElementById('image-container');
+        imagePlaceholderText = document.getElementById('image-placeholder-text');
+
+        // Regenerate icon buttons and setup tab listeners after restoring the DOM
+        generateIconButtons();
+        setupTabListeners();
+    }
+    // --- Camera Identification ---
 
     function triggerCamera() {
-        // Check if the button is disabled (due to missing API key)
-        if (cameraButtonElement && cameraButtonElement.disabled) {
-            showModal("Camera feature is disabled because the Gemini API Key is missing or browser permissions were denied.", false, true);
-            return;
-        }
         // Click the hidden file input to open the camera or file selector
         cameraInput.click();
     }
@@ -2098,9 +2305,15 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
 
         var reader = new FileReader();
         reader.onload = function(e) {
-            var base64ImageData = e.target.result.split(',')[1]; // Get only the base64 data
-            var mimeType = file.type || "image/jpeg";
-            identifyFoodInImage(base64ImageData, mimeType);
+            var img = new Image();
+            img.onload = function() {
+                identifyFoodInImageLocal(img);
+            };
+            img.onerror = function() {
+                console.error("Error loading image for processing.");
+                showModal("Failed to load image for identification.", false, true);
+            };
+            img.src = e.target.result;
         };
         reader.onerror = function(error) {
             console.error("File Reader Error:", error);
@@ -2112,38 +2325,28 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
         event.target.value = null;
     }
 
-    function identifyFoodInImage(base64ImageData, mimeType) {
+    function identifyFoodInImageLocal(imageElement) {
         showModal("Identifying food...", true, false);
 
-        var payload = {
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: "Identify the single, most prominent food item in this image. Respond with only the name of the food (e.g., \"Apple\", \"Banana\", \"Almonds\"). Do not add any other text or punctuation." },
-                        {
-                            inlineData: {
-                                mimeType: mimeType,
-                                data: base64ImageData
-                            }
-                        }
-                    ]
+        // Load the MobileNet model
+        mobilenet.load().then(function(model) {
+            // Classify the image
+            model.classify(imageElement).then(function(predictions) {
+                if (predictions && predictions.length > 0) {
+                    // Get the top prediction
+                    var foodName = predictions[0].className.split(',')[0].trim();
+                    findAndSelectFood(foodName);
+                } else {
+                    showModal("Could not identify the food.", false, true);
                 }
-            ],
-        };
-
-        var apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_VISION_MODEL + ':generateContent?key=' + API_KEY;
-
-        callGeminiAPI(apiUrl, payload)
-            .then(function(result) {
-                var aiFoodName = result.candidates[0].content.parts[0].text;
-                aiFoodName = aiFoodName.trim().replace(/["."]/g, ''); // Clean up response
-                findAndSelectFood(aiFoodName);
-            })
-            .catch(function(error) {
-                console.error("AI Vision Error:", error);
-                showModal("Error identifying food. " + error.message, false, true);
+            }).catch(function(err) {
+                console.error("Classification Error:", err);
+                showModal("Error during food identification.", false, true);
             });
+        }).catch(function(err) {
+            console.error("Model Loading Error:", err);
+            showModal("Could not load the recognition model.", false, true);
+        });
     }
 
     function findAndSelectFood(aiFoodName) {
@@ -2173,10 +2376,10 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
 
         if (matchFound) {
             showModal("Found: " + matchedFood + "!", true, false);
-            
+
             // Set category
             categorySelect.value = matchedCategory;
-            
+
             // Manually trigger the 'change' event to populate the food list
             // Use a compatible event creation method for broader support
             var event;
@@ -2195,13 +2398,269 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
             // Update the display (triggering the food change event)
              // We must dispatch the event on foodSelect as well to trigger displayFoodDetails
             foodSelect.dispatchEvent(event);
-            
+
 
             setTimeout(hideModal, 1500); // Show success briefly
         } else {
             showModal("AI identified: " + aiFoodName + ".\nNot found in our database.", false, true);
         }
     }
+
+    // --- Recipe Builder Functions ---
+
+    function setupRecipeBuilderListeners() {
+        var recipeCategorySelect = document.getElementById('recipe-category-select');
+        var recipeFoodSelect = document.getElementById('recipe-food-select');
+        var addIngredientBtn = document.getElementById('add-ingredient-btn');
+
+        // Populate categories for the recipe builder dropdown
+        var categories = Object.keys(foodData).sort();
+        categories.forEach(function(category) {
+            var option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            recipeCategorySelect.appendChild(option);
+        });
+
+        recipeCategorySelect.addEventListener('change', function() {
+            var category = this.value;
+            recipeFoodSelect.innerHTML = '<option value="">Select Food...</option>';
+            addIngredientBtn.disabled = true;
+
+            if (category && foodData[category]) {
+                recipeFoodSelect.disabled = false;
+                var foods = Object.keys(foodData[category]).sort();
+                foods.forEach(function(food) {
+                    var option = document.createElement('option');
+                    option.value = food;
+                    option.textContent = food;
+                    recipeFoodSelect.appendChild(option);
+                });
+            } else {
+                recipeFoodSelect.disabled = true;
+            }
+        });
+
+        recipeFoodSelect.addEventListener('change', function() {
+            if (this.value) {
+                addIngredientBtn.disabled = false;
+            } else {
+                addIngredientBtn.disabled = true;
+            }
+        });
+
+        addIngredientBtn.addEventListener('click', addIngredient);
+        document.getElementById('generate-recipe-btn').addEventListener('click', generateRecipe);
+    }
+
+    function addIngredient() {
+        var category = document.getElementById('recipe-category-select').value;
+        var food = document.getElementById('recipe-food-select').value;
+
+        if (!food) return;
+
+        // Check if ingredient is already added
+        var isAlreadyAdded = selectedIngredients.find(function(item) {
+            return item.food === food;
+        });
+
+        if (!isAlreadyAdded) {
+            selectedIngredients.push({ category: category, food: food });
+            renderIngredientList();
+        }
+
+        // Reset dropdowns
+        document.getElementById('recipe-food-select').value = '';
+        document.getElementById('add-ingredient-btn').disabled = true;
+    }
+
+    function removeIngredient(foodNameToRemove) {
+        selectedIngredients = selectedIngredients.filter(function(item) {
+            return item.food !== foodNameToRemove;
+        });
+        renderIngredientList();
+    }
+
+    function renderIngredientList() {
+        var listElement = document.getElementById('ingredient-list');
+        var generateBtn = document.getElementById('generate-recipe-btn');
+        listElement.innerHTML = ''; // Clear the list
+
+        if (selectedIngredients.length === 0) {
+            generateBtn.disabled = true;
+        } else {
+            generateBtn.disabled = false;
+            selectedIngredients.forEach(function(ingredient) {
+                var listItem = document.createElement('li');
+                listItem.textContent = ingredient.food;
+
+                var removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-ingredient-btn material-icons';
+                removeBtn.textContent = 'cancel';
+                removeBtn.title = 'Remove ' + ingredient.food;
+                removeBtn.onclick = function() {
+                    removeIngredient(ingredient.food);
+                };
+
+                listItem.appendChild(removeBtn);
+                listElement.appendChild(listItem);
+            });
+        }
+        updateSuggestedIngredients(); // <-- ADD THIS LINE
+    }
+
+    function updateSuggestedIngredients() {
+        var suggestionsContainer = document.getElementById('suggested-ingredients-container');
+        var suggestionsList = document.getElementById('suggested-ingredients-list');
+        suggestionsList.innerHTML = '';
+
+        if (selectedIngredients.length === 0) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+
+        var allMaximisers = [];
+
+        selectedIngredients.forEach(function(ingredient) {
+            var data = foodData[ingredient.category][ingredient.food];
+            if (data && data['Maximiser']) {
+                var maximiserText = formatData(data['Maximiser'], 'All');
+                if (isValidContent(maximiserText)) {
+                    var maximisers = maximiserText.split(',').map(function(item) {
+                        return item.trim();
+                    });
+                    allMaximisers = allMaximisers.concat(maximisers);
+                }
+            }
+        });
+
+        // Filter out duplicates and already selected ingredients
+        var uniqueSuggestions = allMaximisers.filter(function(item, index) {
+            var isAlreadySelected = selectedIngredients.find(function(selected) {
+                return selected.food.toLowerCase() === item.toLowerCase();
+            });
+            return !isAlreadySelected && allMaximisers.indexOf(item) === index;
+        });
+
+        if (uniqueSuggestions.length > 0) {
+            suggestionsContainer.style.display = 'block';
+            uniqueSuggestions.forEach(function(suggestion) {
+                var chip = document.createElement('div');
+                chip.className = 'suggestion-chip';
+                chip.textContent = suggestion;
+                chip.onclick = function() {
+                    addSuggestedIngredient(suggestion);
+                };
+                suggestionsList.appendChild(chip);
+            });
+        } else {
+            suggestionsContainer.style.display = 'none';
+        }
+    }
+
+    function addSuggestedIngredient(foodName) {
+        var foodInfo = findFoodInCategory(foodName);
+        if (foodInfo) {
+             var isAlreadyAdded = selectedIngredients.find(function(item) {
+                return item.food === foodName;
+            });
+
+            if (!isAlreadyAdded) {
+                selectedIngredients.push({ category: foodInfo.category, food: foodName });
+                renderIngredientList();
+            }
+        } else {
+            console.warn("Could not find category for suggested ingredient:", foodName);
+        }
+    }
+
+    function findFoodInCategory(foodNameToFind) {
+        for (var category in foodData) {
+            if (Object.prototype.hasOwnProperty.call(foodData, category)) {
+                for (var food in foodData[category]) {
+                    if (Object.prototype.hasOwnProperty.call(foodData[category], food) && food.toLowerCase() === foodNameToFind.toLowerCase()) {
+                        return { category: category, food: food };
+                    }
+                }
+            }
+        }
+        return null; // Not found
+    }
+
+    function generateRecipe() {
+        showModal("Generating recipe...", true, false);
+
+        var detailedIngredients = [];
+        selectedIngredients.forEach(function(ingredient) {
+            var data = foodData[ingredient.category][ingredient.food];
+            var details = {
+                food: ingredient.food,
+                category: ingredient.category,
+                specificBenefits: formatData(data['Specific Benefits'], 'All'),
+                healthTags: formatData(data['Health Tags'], 'All'),
+                maximisers: formatData(data['Maximiser'], 'All'),
+                idealPreparation: formatData(data['Ideal Preparation'], 'All'),
+                ayurvedicEnergetics: formatData(data['Ayurvedic Energetics in plain English (Only for herbs)'], 'All')
+            };
+            detailedIngredients.push(details);
+        });
+
+        var prompt = constructRecipePrompt(detailedIngredients);
+
+        // --- MOCK AI CALL ---
+        // In a real scenario, this would be an API call to a generative AI model.
+        // For this example, we'll simulate a delay and a mock response.
+        setTimeout(function() {
+            var mockResponse = "### Delicious & Healthy Recipe\n\n" +
+                "Here is a recipe based on your selected ingredients:\n\n" +
+                "**Ingredients:**\n" +
+                detailedIngredients.map(function(item) { return "- " + item.food; }).join('\n') +
+                "\n\n**Instructions:**\n" +
+                "1. **Prepare Ingredients:** Start by preparing the " + detailedIngredients[0].food + " as per its ideal preparation method: " + (detailedIngredients[0].idealPreparation || 'as desired') + ".\n" +
+                "2. **Combine:** Mix all ingredients in a bowl.\n" +
+                "3. **Serve:** Enjoy this healthy and beneficial meal!\n\n" +
+                "> This recipe is designed to maximize the health benefits, taking into account the Ayurvedic energetics and specific properties of each ingredient.";
+
+            displayRecipe(mockResponse);
+            hideModal();
+        }, 2000); // Simulate a 2-second API call
+    }
+
+    function constructRecipePrompt(ingredients) {
+        var prompt = "Create a healthy and delicious recipe using the following ingredients. " +
+            "For each ingredient, I've provided details on its health benefits, ideal preparation, and other properties. " +
+            "The recipe should be practical, easy to follow, and aim to maximize the synergistic health benefits of the combination.\n\n";
+
+        ingredients.forEach(function(item) {
+            prompt += "--- \n";
+            prompt += "Ingredient: " + item.food + " (" + item.category + ")\n";
+            if (item.specificBenefits) prompt += "Benefits: " + item.specificBenefits + "\n";
+            if (item.healthTags) prompt += "Tags: " + item.healthTags + "\n";
+            if (item.maximisers) prompt += "Pairs well with: " + item.maximisers + "\n";
+            if (item.idealPreparation) prompt += "Ideal Preparation: " + item.idealPreparation + "\n";
+            if (item.ayurvedicEnergetics) prompt += "Energetics: " + item.ayurvedicEnergetics + "\n";
+        });
+
+        prompt += "\nPlease provide the recipe in Markdown format, including a title, a list of ingredients, and step-by-step instructions.";
+
+        console.log("Generated Prompt:", prompt); // For debugging
+        return prompt;
+    }
+
+    function displayRecipe(recipeText) {
+        var outputContainer = document.getElementById('recipe-output-container');
+        var outputElement = document.getElementById('recipe-output');
+
+        // A simple markdown to HTML converter
+        var html = recipeText
+            .replace(/### (.*)/g, '<h3>$1</h3>')
+            .replace(/\*\*(.*)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+
+        outputElement.innerHTML = html;
+        outputContainer.style.display = 'block';
+    }
+
 
     // Initialize the application by fetching data
     fetchAndProcessData();
