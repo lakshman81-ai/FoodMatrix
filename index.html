@@ -692,7 +692,24 @@
         .search-result-item strong {
             color: var(--text-color);
         }
+        .search-result-snippet {
+            background-color: #f8f9fa;
+            border-left: 3px solid var(--border-color);
+            padding: 8px 12px;
+            margin-top: 8px;
+            border-radius: 4px;
+        }
 
+        .search-result-snippet p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .search-result-snippet strong {
+            background-color: #ffd700; /* Gold */
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -2029,31 +2046,55 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
         for (var category in foodData) {
             for (var food in foodData[category]) {
                 var foodDetails = foodData[category][food];
-                var foundIn = [];
+                var matches = [];
 
                 for (var field in foodDetails) {
                     if (field === '_imageUrl') continue;
 
                     var content = formatData(foodDetails[field], 'All');
                     if (isValidContent(content) && content.toLowerCase().indexOf(lowerCaseKeyword) !== -1) {
-                        // Clean up field name for display
                         var cleanField = field.replace(/\(only for .+\)/gi, '').replace(/\(.+\)/g, '').trim();
-                        if (foundIn.indexOf(cleanField) === -1) {
-                            foundIn.push(cleanField);
+                        var snippet = createSnippet(content, keyword);
+                        if (snippet) {
+                            matches.push({
+                                field: cleanField,
+                                snippet: snippet
+                            });
                         }
                     }
                 }
 
-                if (foundIn.length > 0) {
+                if (matches.length > 0) {
                     results.push({
                         foodName: food,
                         category: category,
-                        foundIn: foundIn
+                        matches: matches
                     });
                 }
             }
         }
         return results;
+    }
+
+    function createSnippet(text, keyword, contextLength) {
+        contextLength = contextLength || 80;
+        var lowerText = text.toLowerCase();
+        var lowerKeyword = keyword.toLowerCase();
+        var index = lowerText.indexOf(lowerKeyword);
+        if (index === -1) return null;
+
+        var start = Math.max(0, index - contextLength);
+        var end = Math.min(text.length, index + keyword.length + contextLength);
+
+        var prefix = start > 0 ? "..." : "";
+        var suffix = end < text.length ? "..." : "";
+
+        var snippet = text.substring(start, end);
+
+        var escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        var highlightedSnippet = snippet.replace(new RegExp(escapedKeyword, 'gi'), '<strong>$&</strong>');
+
+        return prefix + highlightedSnippet + suffix;
     }
 
     function displaySearchResults(results) {
@@ -2070,7 +2111,11 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
                 htmlContent += '<div class="search-result-item">';
                 htmlContent += '<h3><a href="#" class="search-result-link" data-category="' + result.category + '" data-food="' + result.foodName + '">' + result.foodName + '</a></h3>';
                 htmlContent += '<p><strong>Category:</strong> ' + result.category + '</p>';
-                htmlContent += '<p><em>Found in: ' + result.foundIn.join(', ') + '</em></p>';
+                result.matches.forEach(function(match) {
+                    htmlContent += '<div class="search-result-snippet">';
+                    htmlContent += '<p><em>' + match.field + ':</em> ' + match.snippet + '</p>';
+                    htmlContent += '</div>';
+                });
                 htmlContent += '</div>';
             });
             htmlContent += '</div>';
@@ -2085,6 +2130,9 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
                 var category = this.getAttribute('data-category');
                 var food = this.getAttribute('data-food');
 
+                // Restore the main content structure before populating it
+                restoreMainContent();
+
                 // Set the dropdowns
                 categorySelect.value = category;
 
@@ -2094,13 +2142,63 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
 
                 foodSelect.value = food;
                 foodSelect.dispatchEvent(event); // This will trigger displayFoodDetails
-
-                // Hide search results and show main content view
-                // displayFoodDetails will handle showing the main content appropriately
             });
         });
     }
 
+    function restoreMainContent() {
+        mainContent.innerHTML = `
+            <!-- Icon Navigation -->
+            <div class="icon-row" id="icon-row">
+                <!-- Icons generated by JS -->
+            </div>
+
+            <!-- Food Title -->
+            <h2 id="food-title"></h2>
+
+            <!-- Tabbed Content -->
+            <div class="tabs-container" id="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-button active" id="tab-btn-overview" data-tab="tab-overview">Overview</button>
+                    <button class="tab-button" id="tab-btn-dynamic" data-tab="tab-dynamic">Details</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-content active" id="tab-overview">
+                    <div class="info-section">
+                        <div class="info-title">Specific Benefits</div>
+                        <div class="info-content" id="Specific Benefits (min 50 to max 100 words) (K)"></div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-title">Health Tags</div>
+                        <div class="info-content" id="Health Tags"></div>
+                    </div>
+                </div>
+
+                 <!-- Dynamic Details Tab -->
+                <div class="tab-content" id="tab-dynamic">
+                    <!-- Dynamic content generated by JS -->
+                </div>
+            </div>
+
+
+            <!-- Image Container -->
+            <div id="image-container" style="display: none;">
+                <img id="food-image" src="" alt="Food Image">
+                <div id="image-placeholder-text" style="display: none;">Image not available</div>
+            </div>
+        `;
+        // Re-initialize dynamic elements
+        dynamicTabContent = document.getElementById('tab-dynamic');
+        dynamicTabButton = document.getElementById('tab-btn-dynamic');
+        foodImage = document.getElementById('food-image');
+        imageContainer = document.getElementById('image-container');
+        imagePlaceholderText = document.getElementById('image-placeholder-text');
+
+        // Regenerate icon buttons and setup tab listeners after restoring the DOM
+        generateIconButtons();
+        setupTabListeners();
+    }
     // --- Camera Identification ---
 
     function triggerCamera() {
