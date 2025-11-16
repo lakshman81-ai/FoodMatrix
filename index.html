@@ -631,6 +631,18 @@
     </div>
 </div>
 
+<!-- Password Modal -->
+<div id="password-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <p>Enter Password to Proceed</p>
+        <input type="password" id="password-input" style="padding: 8px; margin-top: 10px; width: 80%; border: 1px solid #ccc; border-radius: 4px;">
+        <div style="margin-top: 15px;">
+            <button id="password-submit-btn" class="ai-button">Submit</button>
+            <button id="password-cancel-btn" class="ai-button" style="background-color: #6c757d;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <!-- Initial Loading Indicator -->
 <div id="loading">Loading Food matrix data...</div>
 
@@ -803,9 +815,11 @@
 
     // Using 'var' for ES5 compatibility
     var foodData = {}; 
+    var API_PASSWORD = "c3VwZXJkYWQ="; // "superdad" encoded in Base64
+    var pendingAiFunction = null; // To store the function to run after password success
 
     // Google Sheet URL
-    var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQRQTEztCwC34GwFO1SN4evMaaZc2LxSMgI9Z8rgNh6VdiRPzRgswBFuXFWUxFd-g/pub?output=csv';
+    var CSV_URL = 'food_data.csv';
 
     // --- Gemini API Configuration ---
     // IMPORTANT: Replace "" with your actual Gemini API Key for AI features to work.
@@ -1179,7 +1193,8 @@ var sectionDefinitions = {
         populateCategories();
         generateIconButtons();
         setupTabListeners();
-        setupAIListeners(); 
+        setupAIListeners();
+        setupPasswordModalListeners();
         loadingIndicator.style.display = 'none';
         // The selection panel display is now handled by CSS media queries and JS placement
     }
@@ -1992,9 +2007,10 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
     // --- Gemini Feature: AI Summary ---
 
     function getAISummary() {
-        var category = categorySelect.value;
-        var foodName = foodSelect.value;
-        if (!category || !foodName) return;
+        promptForPassword(function () {
+            var category = categorySelect.value;
+            var foodName = foodSelect.value;
+            if (!category || !foodName) return;
 
         var data = foodData[category][foodName];
         if (!data) return;
@@ -2039,13 +2055,15 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
                 aiSummaryContent.innerHTML = '<p class="no-data" style="color: red;">Error generating summary. ' + error.message + '</p>';
                 aiSummaryBtn.disabled = false;
             });
+        });
     }
 
     // --- Gemini Feature: Recipe Idea ---
 
     function getRecipeIdea() {
-        var foodName = foodSelect.value;
-        if (!foodName) return;
+        promptForPassword(function () {
+            var foodName = foodSelect.value;
+            if (!foodName) return;
 
         var recipeBtn = document.getElementById('ai-recipe-btn');
         var recipeContent = document.getElementById('ai-recipe-content');
@@ -2076,6 +2094,7 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
                 recipeContent.innerHTML = '<p class="no-data" style="color: red;">Error generating recipe. ' + error.message + '</p>';
                 recipeBtn.disabled = false;
             });
+        });
     }
 
     // --- Gemini Feature: Camera Identification ---
@@ -2201,6 +2220,41 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
         } else {
             showModal("AI identified: " + aiFoodName + ".\nNot found in our database.", false, true);
         }
+    }
+
+    // --- Password Modal Functions ---
+
+    function setupPasswordModalListeners() {
+        var passwordModal = document.getElementById('password-modal');
+        var passwordInput = document.getElementById('password-input');
+        var submitBtn = document.getElementById('password-submit-btn');
+        var cancelBtn = document.getElementById('password-cancel-btn');
+
+        submitBtn.onclick = function() {
+            if (passwordInput.value === atob(API_PASSWORD)) {
+                passwordModal.style.display = 'none';
+                passwordInput.value = ''; // Clear password
+                if (typeof pendingAiFunction === 'function') {
+                    pendingAiFunction();
+                    pendingAiFunction = null; // Reset
+                }
+            } else {
+                alert("Incorrect password.");
+                passwordInput.value = '';
+            }
+        };
+
+        cancelBtn.onclick = function() {
+            passwordModal.style.display = 'none';
+            passwordInput.value = '';
+            pendingAiFunction = null; // Reset
+        };
+    }
+
+    function promptForPassword(aiFunction) {
+        pendingAiFunction = aiFunction;
+        document.getElementById('password-modal').style.display = 'flex';
+        document.getElementById('password-input').focus();
     }
 
     // Initialize the application by fetching data
