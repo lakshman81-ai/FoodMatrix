@@ -1262,6 +1262,12 @@ var herbSectionDefinitions = {
     // --- Data Fetching and Processing ---
 
     function fetchAndProcessData() {
+        if (!window.Papa) {
+            console.error("PapaParse library is not loaded.");
+            loadingIndicator.textContent = 'Error: Data parsing library failed to load.';
+            return;
+        }
+
         // More resilient helper: always resolves, returning data or an empty array.
         function fetchCsv(url) {
             return new Promise(function(resolve) {
@@ -1610,8 +1616,9 @@ var herbSectionDefinitions = {
             var category = this.value;
             var data = (currentMode === 'herb') ? herbData : foodData;
 
-            // The placeholder text is already set by updateUIAfterModeChange
-            // foodSelect.innerHTML = '<option value="">Select...</option>';
+            // Clear previous options, keeping the placeholder
+            var placeholderText = (currentMode === 'herb') ? "Select Herb..." : "Select Food...";
+            foodSelect.innerHTML = '<option value="">' + placeholderText + '</option>';
             foodSelect.value = "";
             mainContent.style.display = 'none';
             imageContainer.style.display = 'none';
@@ -1909,13 +1916,13 @@ var herbSectionDefinitions = {
     function populateOverview() {
         var category = categorySelect.value;
         var foodName = foodSelect.value;
-        // Get the currently selected basis from the dropdown
         var basis = basisSelect.value;
+        var dataStore = (currentMode === 'herb') ? herbData : foodData;
 
         // Safety check
-        if (!category || !foodName || !foodData[category] || !foodData[category][foodName]) return;
+        if (!category || !foodName || !dataStore[category] || !dataStore[category][foodName]) return;
 
-        var data = foodData[category][foodName];
+        var data = dataStore[category][foodName];
 
         // These IDs must match the HTML IDs, which correspond to the CSV headers for the overview fields.
         populateField("Specific Benefits (min 50 to max 100 words) (K)", data, basis);
