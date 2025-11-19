@@ -1454,7 +1454,7 @@ var herbSectionDefinitions = {
     // --- UI Initialization ---
 
     function initializeUI() {
-        if (Object.keys(foodData).length === 0) {
+        if (Object.keys(foodData).length === 0 && Object.keys(herbData).length === 0) {
             // Check if a specific error message hasn't already been set
             if (loadingIndicator.textContent.startsWith('Loading')) {
                loadingIndicator.textContent = "Data processed, but no valid entries were found. Check CSV format and content.";
@@ -1540,6 +1540,33 @@ var herbSectionDefinitions = {
                 button.innerHTML = '<i class="material-icons">' + config.icon + '</i>';
 
                 // ES5 compatibility closure for onclick event
+                button.onclick = (function(id, colorVar, name) {
+                    return function() {
+                        selectSection(id, colorVar, name);
+                    };
+                })(config.id, config.colorVar, sectionName);
+
+                iconRow.appendChild(button);
+            }
+        }
+    }
+
+    function generateHerbIconButtons() {
+        var iconRow = document.getElementById('herb-icon-row');
+        iconRow.innerHTML = '';
+
+        for (var sectionName in herbSectionDefinitions) {
+            if (Object.prototype.hasOwnProperty.call(herbSectionDefinitions, sectionName)) {
+                var config = herbSectionDefinitions[sectionName];
+                var button = document.createElement('div');
+                button.className = 'icon-button';
+                button.id = 'icon-btn-' + config.id;
+                button.setAttribute('data-section', config.id);
+                button.setAttribute('data-color-var', config.colorVar);
+                button.setAttribute('title', sectionName);
+
+                button.innerHTML = '<i class="material-icons">' + config.icon + '</i>';
+
                 button.onclick = (function(id, colorVar, name) {
                     return function() {
                         selectSection(id, colorVar, name);
