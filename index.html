@@ -1636,8 +1636,10 @@ var herbSectionDefinitions = {
             var category = this.value;
             var data = (currentMode === 'herb') ? herbData : foodData;
 
-            // The placeholder text is already set by updateUIAfterModeChange
-            // foodSelect.innerHTML = '<option value="">Select...</option>';
+            // Clear existing options and set correct placeholder
+            var placeholder = (currentMode === 'herb') ? 'Select Herb...' : 'Select Food...';
+            foodSelect.innerHTML = '<option value="">' + placeholder + '</option>';
+
             foodSelect.value = "";
             mainContent.style.display = 'none';
             imageContainer.style.display = 'none';
