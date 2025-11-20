@@ -282,10 +282,10 @@
         }
         #more-info-fab .material-icons {
             font-size: 28px;
-            transition: transform 0.3s ease-in-out;
+            /* Transition removed for toggle icon switch */
         }
         #more-info-fab.active .material-icons {
-            transform: rotate(180deg);
+             color: var(--primary-color);
         }
 
         /* --- Selection Modal (Mobile) --- */
@@ -1133,7 +1133,7 @@ var herbSectionDefinitions = {
         },
         "Remedies: Respiratory": {
             id: "remedies_respiratory",
-            icon: "air",
+            icon: "filter_drama",
             colorVar: "--color-nutrition",
             fields: [
                 defineField("Common Cold"),
@@ -1144,7 +1144,7 @@ var herbSectionDefinitions = {
         },
         "Remedies: Digestion": {
             id: "remedies_digestion",
-            icon: "stomach",
+            icon: "local_dining",
             colorVar: "--color-metabolic",
             fields: [
                 defineField("Indigestion"),
@@ -1156,7 +1156,7 @@ var herbSectionDefinitions = {
         },
         "Remedies: General": {
             id: "remedies_general",
-            icon: "healing",
+            icon: "local_pharmacy",
             colorVar: "--color-tradition",
             fields: [
                 defineField("Body Aches"),
@@ -1169,7 +1169,7 @@ var herbSectionDefinitions = {
         },
         "Remedies: Skin & Mind": {
             id: "remedies_skin_mind",
-            icon: "psychology",
+            icon: "face",
             colorVar: "--color-notes",
             fields: [
                 defineField("Acne"),
@@ -1738,11 +1738,11 @@ var herbSectionDefinitions = {
             // Update the button's appearance
             if (showMoreInfo) {
                 fab.classList.add('active');
-                icon.textContent = 'expand_less';
+                icon.textContent = 'toggle_on';
                 fab.title = 'Show Less Info';
             } else {
                 fab.classList.remove('active');
-                icon.textContent = 'expand_more';
+                icon.textContent = 'toggle_off';
                 fab.title = 'Show More Info';
             }
 
@@ -2044,13 +2044,18 @@ var herbSectionDefinitions = {
                 hasContent = true;
                 var displayContent = content;
 
-                // Apply reference formatting based on the field key
-                if (fieldKey === "Cite (PubMed)" || fieldKey === "Modern Clinical Insight") {
-                    displayContent = formatReferences(content);
-                }
+                // Special formatting for Herb Medical Properties to expand the legend
+                // Checks for the specific pattern "Ayur:" and "Sci:" in the content
+                if (mode === 'herb' && (displayContent.indexOf('Ayur:') !== -1 || displayContent.indexOf('Sci:') !== -1)) {
+                    displayContent = formatHerbMedicalProperties(displayContent);
+                } else {
+                    // Apply reference formatting to ALL other content
+                    // This ensures PMC/PMID links are generated wherever they appear (Notes, Research, etc.)
+                    displayContent = formatReferences(displayContent);
 
-                // Colorize basis labels inside the display content (Research/Book -> brown, Gen -> blue)
-                displayContent = colorizeBasisLabels(displayContent);
+                    // Colorize basis labels inside the display content (Research/Book -> brown, Gen -> blue)
+                    displayContent = colorizeBasisLabels(displayContent);
+                }
 
                 var displayFieldName;
                 if (customDisplayName) {
@@ -2080,13 +2085,28 @@ var herbSectionDefinitions = {
     var showMoreInfo = false; // State for the "More Info" toggle
 
     // Function to truncate text based on specific rules
-    function truncateText(text) {
+    function truncateText(text, mode) {
         if (!text) return text;
         var clean = text;
-        // Remove [More info...] or (More info...) blocks entirely, case-insensitive
-        clean = clean.replace(/[\(\[]\s*More info.*?[\)\]]/gi, '');
-        // Remove content starting with G:, B:, or R: to the end of the string
-        clean = clean.replace(/(\s+|^)[GBR]:.*/s, '');
+
+        if (mode === 'herb') {
+            // In herbs mode, do not show info within brackets e.g., [📌 "Lad, p. 98"]
+            clean = clean.replace(/\[.*?\]/g, '');
+        } else {
+            // Food Mode Logic
+
+            // 1. Remove (More info...) blocks entirely, case-insensitive.
+            // This handles variations like (More info- R:...) or (More info...)
+            clean = clean.replace(/\(\s*More info.*?\)/gi, '');
+
+            // 2. Truncate text before R:, B:, G: or Research:, Book:, Gen: etc.
+            // The user wants to hide everything starting from these markers when toggle is OFF.
+            // Markers: R:, B:, G:, Research:, Book:, Gen:, [R], [B], [G]
+            // We use a regex that finds the *first* occurrence of any of these and truncates the rest.
+            var regex = /(\s+|^)(?:[RGB]:|Research\s*:|Book\s*:|Gen\s*:|Research\s+basis|Book\s+basis|Gen\s+basis|\[[RGB]\]).*/si;
+            clean = clean.replace(regex, '');
+        }
+
         return clean.trim();
     };
 
@@ -2210,6 +2230,83 @@ var herbSectionDefinitions = {
         });
     }
 
+    // *** NEW FUNCTION: Format Herb Medical Properties ***
+    // Parses "Ayur:E [...] / Sci:M [...]" into a readable legend format
+    function formatHerbMedicalProperties(text) {
+        if (!text) return text;
+
+        var ayurMap = {
+            'E': 'Ayurvedic: Excellent',
+            'G': 'Ayurvedic: Good',
+            'N': 'Ayurvedic: Nominal'
+        };
+
+        var sciMap = {
+            'S': 'Scientific studies: Strong Clinical Support (Multiple high-quality human trials/meta-analyses)',
+            'M': 'Scientific studies: Moderate Clinical Support (Some human trials or strong mechanistic data)',
+            'L': 'Scientific studies: Limited (Pre-clinical, animal, or only traditional-use data)',
+            'N': 'Scientific studies: None or Contraindicated'
+        };
+
+        var parts = text.split(' / ');
+        var formattedParts = [];
+        var paperLink = '';
+
+        parts.forEach(function(part) {
+            var trimmed = part.trim();
+
+            // Parse Ayur
+            if (trimmed.startsWith('Ayur:')) {
+                var code = trimmed.substring(5, 6); // Get the character after "Ayur:"
+                if (ayurMap[code]) {
+                    formattedParts.push('<strong>' + ayurMap[code] + '</strong>');
+                } else {
+                    // Fallback if code not found, just show raw (minus brackets if toggle off?)
+                    // actually, usually just "Ayurvedic: " + rest
+                     formattedParts.push('<strong>Ayurvedic:</strong> ' + trimmed.substring(5));
+                }
+            }
+            // Parse Sci
+            else if (trimmed.startsWith('Sci:')) {
+                var code = trimmed.substring(4, 5); // Get character after "Sci:"
+                if (sciMap[code]) {
+                    formattedParts.push('<strong>' + sciMap[code] + '</strong>');
+                } else {
+                     formattedParts.push('<strong>Scientific studies:</strong> ' + trimmed.substring(4));
+                }
+            } else {
+                // Handle content that doesn't match the strict pattern (append as is)
+                formattedParts.push(trimmed);
+            }
+
+            // Extract Paper Link (PMCID/PMID) from within brackets in this part
+            // Pattern: [🔬 "PMCID: PMC..."] or similar
+            var match = trimmed.match(/\[.*?(PMCID|PMID|PMC).*?\]/i);
+            if (match) {
+                var citation = match[0];
+                // clean the citation text
+                var cleanCitation = citation.replace(/[\[\]🔬"]/g, '').trim();
+
+                // Ensure it is formatted as a link
+                cleanCitation = formatReferences(cleanCitation);
+
+                // Format as "Paper: ..."
+                // Check if we already have a paper link to avoid duplicates if multiple parts have it?
+                // Usually only one Sci part has the link.
+                if (!paperLink) {
+                    paperLink = '<div><strong>Paper:</strong> ' + cleanCitation + '</div>';
+                }
+            }
+        });
+
+        var result = formattedParts.join('<br>');
+        if (paperLink) {
+            result += '<br>' + paperLink;
+        }
+
+        return result;
+    }
+
     // *** UPDATED FUNCTION ***
     // REVISED: Formats the data based on the selected basis and implements truncation logic
     function formatData(data, basis) {
@@ -2249,7 +2346,15 @@ var herbSectionDefinitions = {
 
         // Check if the data is flattened (only "All" key exists and has content)
         if (data["All"] && validKeys.length === 1 && validKeys[0] === "All") {
-            return data["All"];
+            var finalContent = data["All"];
+            // Apply truncation if the "More Info" toggle is off
+            if (!showMoreInfo && finalContent) {
+                var isHerbMedicalProp = (currentMode === 'herb' && (finalContent.indexOf('Ayur:') !== -1 || finalContent.indexOf('Sci:') !== -1));
+                if (!isHerbMedicalProp) {
+                    finalContent = truncateText(finalContent, currentMode);
+                }
+            }
+            return finalContent;
         }
 
         // If not flattened (or if multiple keys exist), combine all available bases.
@@ -2272,8 +2377,14 @@ var herbSectionDefinitions = {
         var finalContent = combined || null;
 
         // Apply truncation if the "More Info" toggle is off
+        // Exception: For Herb mode Medical Properties (Ayur:/Sci:), we skip standard truncation
+        // because formatHerbMedicalProperties needs the raw brackets to extract links.
         if (!showMoreInfo && finalContent) {
-            finalContent = truncateText(finalContent);
+            var isHerbMedicalProp = (currentMode === 'herb' && (finalContent.indexOf('Ayur:') !== -1 || finalContent.indexOf('Sci:') !== -1));
+
+            if (!isHerbMedicalProp) {
+                 finalContent = truncateText(finalContent, currentMode);
+            }
         }
 
         return finalContent;
@@ -2297,8 +2408,12 @@ var herbSectionDefinitions = {
     // Converts PMC/PMID text into clickable hyperlinks
     function formatReferences(text) {
         if (!text) return text;
-        // Link PMC IDs
-        var processedText = text.replace(/(PMC\d+)/g, '<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/$1/" target="_blank">$1</a>');
+        // Link PMC IDs (handles PMC12345 and PMC 12345)
+        var processedText = text.replace(/(PMC\s*)(\d+)/gi, function(match, prefix, id) {
+             // Standardize display to PMC12345
+             var pmcId = 'PMC' + id;
+             return '<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/' + pmcId + '/" target="_blank">' + pmcId + '</a>';
+        });
 
         // Link PMID IDs
         processedText = processedText.replace(/(PMID\s*[:]?\s*)(\d+)/gi, function(match, prefix, id) {
@@ -2591,8 +2706,8 @@ html = html.replace(/\[G\]/g, '<span class="basis-blue"><strong>[G]</strong></sp
 </script>
 
 <!-- More Info Toggle FAB -->
-<button id="more-info-fab" title="Toggle More Info">
-    <i class="material-icons">expand_more</i>
+<button id="more-info-fab" title="Show More Info">
+    <i class="material-icons">toggle_off</i>
 </button>
 
 </body>
